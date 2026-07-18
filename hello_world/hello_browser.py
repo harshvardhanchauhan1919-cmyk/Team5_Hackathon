@@ -17,7 +17,7 @@ def main() -> None:
         browser = p.chromium.launch(headless=True)  # set headless=False to watch it
         page = browser.new_page()
 
-        page.goto("https://www.saucedemo.com/")
+        page.goto("https://www.saucedemo.com/", timeout=60000)
         page.fill('[data-test="username"]', "standard_user")
         page.fill('[data-test="password"]', "secret_sauce")
         page.click('[data-test="login-button"]')
