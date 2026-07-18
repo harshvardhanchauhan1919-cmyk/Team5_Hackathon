@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import streamlit as st
+
 from schemas import AgentState
 
 
@@ -12,17 +13,27 @@ def render_gallery(state: AgentState) -> None:
     # 1. Error & Diagnosis Section (if failure occurred)
     if state.result and state.result.status == "fail":
         with st.container(border=True):
-            st.markdown("<h4 style='color:#ef4444; margin-top:0;'>❌ Execution Failure Detected</h4>", unsafe_allow_html=True)
+            st.markdown(
+                "<h4 style='color:#ef4444; margin-top:0;'>❌ Execution Failure Detected</h4>",
+                unsafe_allow_html=True,
+            )
 
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown(f"**Error Kind:** `{state.result.error.kind if state.result.error else 'N/A'}`")
-                st.markdown(f"**Error Message:** `{state.result.error.message if state.result.error else 'N/A'}`")
-                st.markdown(f"**Step Index:** `{state.result.error.step_index if state.result.error else 'N/A'}`")
+                st.markdown(
+                    f"**Error Kind:** `{state.result.error.kind if state.result.error else 'N/A'}`"
+                )
+                error_message = state.result.error.message if state.result.error else "N/A"
+                step_index = state.result.error.step_index if state.result.error else "N/A"
+                st.markdown(f"**Error Message:** `{error_message}`")
+                st.markdown(f"**Step Index:** `{step_index}`")
 
             with col2:
                 if state.diagnosis:
-                    st.markdown("<h5 style='color:#3b82f6; margin-top:0;'>🩺 Diagnosis Report</h5>", unsafe_allow_html=True)
+                    st.markdown(
+                        "<h5 style='color:#3b82f6; margin-top:0;'>🩺 Diagnosis Report</h5>",
+                        unsafe_allow_html=True,
+                    )
                     st.markdown(f"**Root Cause:** {state.diagnosis.root_cause}")
                     st.markdown(f"**Confidence:** `{state.diagnosis.confidence * 100:.1f}%`")
                     st.markdown(f"**Suggested Fix:** *{state.diagnosis.suggested_fix}*")
@@ -78,7 +89,8 @@ def render_gallery(state: AgentState) -> None:
                         st.write(f"**{label}**")
                         # Show placeholder or path
                         st.image(
-                            "https://placehold.co/600x400/0f172a/e2e8f0/png?text=" + img_path.replace(" ", "+"),
+                            "https://placehold.co/600x400/0f172a/e2e8f0/png?text="
+                            + img_path.replace(" ", "+"),
                             caption=img_path,
                         )
             else:

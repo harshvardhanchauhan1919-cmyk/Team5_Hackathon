@@ -32,11 +32,17 @@ def main():
         class SimpleConsole:
             def print(self, msg, *args, **kwargs):
                 print(msg)
+
             def rule(self, title):
                 print(f"\n=== {title} ===")
+
         console = SimpleConsole()
-        Panel = lambda content, title, border_style=None: f"[{title}]\n{content}"
-        Syntax = lambda code, lang, theme=None: code
+
+        def Panel(content, title, border_style=None):
+            return f"[{title}]\n{content}"
+
+        def Syntax(code, lang, theme=None):
+            return code
 
     try:
         console.rule("Starting Self-Healing Loop Observer")
@@ -45,16 +51,24 @@ def main():
         class SafeConsole:
             def print(self, msg, *args, **kwargs):
                 # Strip basic brackets/tags
-                clean_msg = str(msg).replace("[bold yellow]", "").replace("[/bold yellow]", "")
+                clean_msg = str(msg).replace("[bold yellow]", "")
+                clean_msg = clean_msg.replace("[/bold yellow]", "")
                 clean_msg = clean_msg.replace("[bold red]", "").replace("[/bold red]", "")
                 clean_msg = clean_msg.replace("[red]", "").replace("[/red]", "")
                 clean_msg = clean_msg.replace("[bold green]", "").replace("[/bold green]", "")
                 print(clean_msg)
+
             def rule(self, title):
                 print(f"\n=== {title} ===")
+
         console = SafeConsole()
-        Panel = lambda content, title, border_style=None: f"[{title}]\n{content}"
-        Syntax = lambda code, lang, theme=None: code
+
+        def Panel(content, title, border_style=None):
+            return f"[{title}]\n{content}"
+
+        def Syntax(code, lang, theme=None):
+            return code
+
         console.rule("Starting Self-Healing Loop Observer")
     
     # ------------------------------------------------------------------
@@ -75,7 +89,8 @@ def main():
         status="fail",
         logs=(
             "Navigating to Cart\n"
-            "Error: locator.click: Timeout 5000ms exceeded waiting for selector [data-test='checkout-btn-renamed']"
+            "Error: locator.click: Timeout 5000ms exceeded waiting for "
+            "selector [data-test='checkout-btn-renamed']"
         ),
         screenshots=["error_screenshot.png"],
         error=Error(
@@ -140,9 +155,15 @@ def main():
     is_verified = verify_healed(healed_result, original_result=failed_result)
     
     if is_verified:
-        console.print("\n[bold green]SUCCESS: Script healing verified and confirmed passed! No regressions.[/bold green]\n")
+        console.print(
+            "\n[bold green]SUCCESS: Script healing verified and confirmed passed!"
+            " No regressions.[/bold green]\n"
+        )
     else:
-        console.print("\n[bold red]FAILURE: Verification hook failed to validate the repair.[/bold red]\n")
+        console.print(
+            "\n[bold red]FAILURE: Verification hook failed to validate the repair."
+            "[/bold red]\n"
+        )
 
 
 if __name__ == "__main__":

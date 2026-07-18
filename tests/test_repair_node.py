@@ -24,7 +24,7 @@ def test_repair_node_success():
         next_state = repair_node(state)
 
         assert next_state.script is not None
-        assert "saucedemo.com" in next_state.script.code  # verifies mock script contains Swag Labs checkout
+        assert "saucedemo.com" in next_state.script.code
         assert len(next_state.repair_attempts) == 1
         assert next_state.repair_attempts[0].attempt_no == 1
         assert next_state.repair_attempts[0].diagnosis == state.diagnosis

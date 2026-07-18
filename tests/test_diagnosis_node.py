@@ -69,7 +69,15 @@ def test_diagnosis_node_strips_markdown_fences():
 
         with patch.object(FakeModel, "invoke") as mock_invoke:
             class MockMsg:
-                content = "```json\n{\n  \"root_cause\": \"markdown fenced root cause\",\n  \"confidence\": 0.85,\n  \"suggested_fix\": \"markdown fix\"\n}\n```"
+                content = (
+                    "```json\n"
+                    "{\n"
+                    '  "root_cause": "markdown fenced root cause",\n'
+                    '  "confidence": 0.85,\n'
+                    '  "suggested_fix": "markdown fix"\n'
+                    "}\n"
+                    "```"
+                )
 
             mock_invoke.return_value = MockMsg()
 

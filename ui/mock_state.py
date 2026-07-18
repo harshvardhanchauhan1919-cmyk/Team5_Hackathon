@@ -18,17 +18,43 @@ from schemas import (
 
 # Define mock steps representing a Swag Labs login -> checkout sequence.
 MOCK_STEPS = [
-    Step(action="goto", value="https://www.saucedemo.com/", description="Navigate to Swag Labs login page"),
-    Step(action="fill", selector="[data-test='username']", value="standard_user", description="Fill in username"),
-    Step(action="fill", selector="[data-test='password']", value="secret_sauce", description="Fill in password"),
-    Step(action="click", selector="[data-test='login-button']", description="Click login button"),
+    Step(
+        action="goto",
+        value="https://www.saucedemo.com/",
+        description="Navigate to Swag Labs login page",
+    ),
+    Step(
+        action="fill",
+        selector="[data-test='username']",
+        value="standard_user",
+        description="Fill in username",
+    ),
+    Step(
+        action="fill",
+        selector="[data-test='password']",
+        value="secret_sauce",
+        description="Fill in password",
+    ),
+    Step(
+        action="click",
+        selector="[data-test='login-button']",
+        description="Click login button",
+    ),
     Step(
         action="click",
         selector="[data-test='add-to-cart-sauce-labs-backpack']",
         description="Add backpack to cart",
     ),
-    Step(action="click", selector="[data-test='shopping-cart-link']", description="Go to cart page"),
-    Step(action="click", selector="[data-test='checkout-btn-renamed']", description="Click checkout button"),
+    Step(
+        action="click",
+        selector="[data-test='shopping-cart-link']",
+        description="Go to cart page",
+    ),
+    Step(
+        action="click",
+        selector="[data-test='checkout-btn-renamed']",
+        description="Click checkout button",
+    ),
 ]
 
 MOCK_FLOW = Flow(
@@ -87,7 +113,8 @@ MOCK_DIAGNOSIS = Diagnosis(
     error=MOCK_FAILED_RESULT.error,
     root_cause=(
         "The checkout button selector '[data-test='checkout-btn-renamed']' did not match "
-        "any element on the page. The button's actual data-test attribute value is '[data-test='checkout']'."
+        "any element on the page. The button's actual data-test attribute value is "
+        "'[data-test='checkout']'."
     ),
     confidence=0.95,
     suggested_fix="Replace '[data-test='checkout-btn-renamed']' with '[data-test='checkout']'.",

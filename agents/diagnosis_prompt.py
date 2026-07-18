@@ -42,9 +42,9 @@ Logs (last 5 lines):
 
 Output:
 {
-  "root_cause": "Selector [data-test='checkout-btn'] was renamed; it no longer exists in the DOM.",
+  "root_cause": "Selector [data-test='checkout-btn'] was renamed; it no longer matches the DOM.",
   "confidence": 0.93,
-  "suggested_fix": "Replace selector with [data-test='checkout'] which is present in the current DOM."
+  "suggested_fix": "Replace the selector with [data-test='checkout'], which exists in the DOM."
 }
 
 ### Example 2 — timeout failure
@@ -55,27 +55,27 @@ Logs (last 5 lines):
 
 Output:
 {
-  "root_cause": "Page load exceeded 5 000 ms timeout; likely a slow server response or missing networkidle wait.",
+  "root_cause": "Page load exceeded 5,000 ms; likely a slow server response or missing wait.",
   "confidence": 0.87,
-  "suggested_fix": "Add page.wait_for_load_state('networkidle') after goto and increase timeout to 10 000 ms."
+  "suggested_fix": "Add page.wait_for_load_state('networkidle') after goto and raise the timeout."
 }
 
 ### Example 3 — missing element failure
-Error: kind=missing_element, message="Element [data-test='add-to-cart-sauce-labs-backpack'] not found", step=3
+Error: kind=missing_element, message="Element [data-test='add-to-cart'] not found", step=3
 Logs (last 5 lines):
   logged in as problem_user
   inventory page loaded
-  locator not found: [data-test='add-to-cart-sauce-labs-backpack']
+  locator not found: [data-test='add-to-cart']
 
 Output:
 {
-  "root_cause": "The add-to-cart button is absent for problem_user; this user role restricts cart interactions.",
+  "root_cause": "The add-to-cart button is absent for problem_user; this role limits cart actions.",
   "confidence": 0.90,
-  "suggested_fix": "Switch to standard_user or add a role-guard check before attempting to add items to cart."
+  "suggested_fix": "Switch to standard_user or add a role guard before cart actions."
 }
 
 ### Example 4 — flow change failure
-Error: kind=flow_change, message="Expected checkout step after cart, but checkout page shows error", step=5
+Error: kind=flow_change, message="Expected checkout after cart, but checkout shows error", step=5
 Logs (last 5 lines):
   clicked [data-test='checkout']
   page URL: /checkout-step-one.html
@@ -83,8 +83,8 @@ Logs (last 5 lines):
 
 Output:
 {
-  "root_cause": "Checkout flow changed: the step order now requires address info before the cart summary.",
+  "root_cause": "Checkout flow changed: the step order now requires address info first.",
   "confidence": 0.82,
-  "suggested_fix": "Insert address-fill steps (firstName, lastName, postalCode, continue) before clicking finish."
+  "suggested_fix": "Insert address-fill steps before clicking finish."
 }
 """

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import streamlit as st
+
 from schemas import AgentState
 
 
@@ -46,7 +47,10 @@ def render_pipeline(state: AgentState) -> None:
     attempts_badge = ""
     if len(state.repair_attempts) > 0:
         last_attempt = state.repair_attempts[-1]
-        attempts_badge = f"<span class='status-badge pass' style='margin-top: 5px;'>Attempt {last_attempt.attempt_no}</span>"
+        attempts_badge = (
+            "<span class='status-badge pass' style='margin-top: 5px;'>"
+            f"Attempt {last_attempt.attempt_no}</span>"
+        )
         if last_attempt.result is not None:
             if last_attempt.result.status == "pass":
                 repair_status = "pass"
@@ -70,7 +74,8 @@ def render_pipeline(state: AgentState) -> None:
         <div class="pipeline-node {status_class}">
             <div style="font-size: 1.8rem; margin-bottom: 5px;">{icon}</div>
             <div style="font-weight: 600; font-size: 0.9rem;">{label}</div>
-            <div style="font-size: 0.75rem; text-transform: uppercase; margin-top: 4px; opacity: 0.8;" class="{status_class}">
+            <div style="font-size: 0.75rem; text-transform: uppercase;"
+                 " margin-top: 4px; opacity: 0.8;" class="{status_class}">
                 {status}
             </div>
             {extra}

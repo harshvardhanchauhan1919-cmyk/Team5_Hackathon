@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import sys
+
 import streamlit as st
 
 # Ensure repository root is in python path for Streamlit imports
@@ -43,7 +44,8 @@ def main() -> None:
                     Self-Healing Browser Automation
                 </h1>
                 <p style="margin: 0; color: #64748b; font-size: 1rem;">
-                    LangGraph Healing Loop (feat/healing_loop) · AI-assisted script diagnostics & repair
+                    LangGraph Healing Loop (feat/healing_loop) · AI-assisted
+                    script diagnostics & repair
                 </p>
             </div>
         </div>
@@ -62,7 +64,12 @@ def main() -> None:
     )
 
     hitl = st.sidebar.checkbox("Enable Human-in-the-Loop Gate (HITL)", value=False)
-    max_attempts = st.sidebar.number_input("Max Healing Attempts", min_value=1, max_value=5, value=3)
+    max_attempts = st.sidebar.number_input(
+        "Max Healing Attempts",
+        min_value=1,
+        max_value=5,
+        value=3,
+    )
 
     # Active state placeholder
     current_state = state_pending
@@ -118,7 +125,7 @@ def main() -> None:
                 final_state_dict = app.invoke(initial_state)
 
                 if isinstance(final_state_dict, dict):
-                    # In some configurations LangGraph returns a dictionary, convert to AgentState if needed
+                    # Some LangGraph configurations return a dict, so convert it.
                     current_state = AgentState(**final_state_dict)
                 else:
                     current_state = final_state_dict
