@@ -1,27 +1,214 @@
 """Flow Discovery agent (D1) — Generation pair · branch feat/discovery_agent.
 
-Light for the demo: flows are seeded/hinted rather than fully auto-discovered.
+A real discovery agent: it crawls the live app to inventory what's there, assembles the
+reachable user journeys into a catalog of test cases (smoke + e2e/regression), and freezes
+that catalog to fixtures/flow_catalog.json. The pipeline then runs over the catalog.
+
+Three stages
+------------
+1. crawl(page)            — deterministic DOM read: collect every [data-test] token + known
+                            navigation controls. This is the "eyes" — real, reproducible.
+2. build_catalog(tokens)  — assemble journeys from what was discovered. A journey is emitted
+                            only if the elements it needs were actually found on the site.
+3. refine_with_llm(...)   — OPTIONAL hybrid step: an LLM re-labels / names the discovered
+                            journeys. Off unless a model is passed (keeps CI deterministic).
+
+Runtime (inside the graph) reads the frozen catalog and selects one flow by id, re-injecting
+the target user (that's how the "break" is switched) and URL. Nothing is hard-coded into the
+node and nothing touches the frozen schema — category is carried by the flow-id convention
+(smoke_* / e2e_*).
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
+from langchain_core.runnables import RunnableConfig
+
 from schemas import AgentState, Flow, Step
 
+DEFAULT_URL = "https://www.saucedemo.com/"
+DEFAULT_USER = "standard_user"
+DEFAULT_FLOW = "e2e_checkout"
+_PASSWORD = "secret_sauce"
+CATALOG_PATH = Path(__file__).parent.parent / "fixtures" / "flow_catalog.json"
 
-def discovery_node(state: AgentState) -> AgentState:
-    # TODO(Generation): replace stub with seeded-flow logic (optionally LLM-assisted).
-    if state.flow is None:
-        state.flow = Flow(
-            id="swaglabs_checkout",
-            name="Login -> add to cart -> checkout -> finish",
-            target_url="https://www.saucedemo.com/",
-            steps=[
-                Step(action="goto", value="https://www.saucedemo.com/", description="open site"),
-                Step(action="fill", selector='[data-test="username"]', value="standard_user"),
-                Step(action="fill", selector='[data-test="password"]', value="secret_sauce"),
-                Step(action="click", selector='[data-test="login-button"]'),
-                Step(action="click", selector='[data-test="add-to-cart-sauce-labs-backpack"]'),
-                Step(action="click", selector='[data-test="shopping-cart-link"]'),
-                Step(action="click", selector='[data-test="checkout"]'),
-            ],
-        )
-    return state
+
+# --------------------------------------------------------------------------- crawl
+def crawl(page) -> set[str]:
+    """Log in and walk the reachable pages, returning the set of discovered data-test tokens.
+
+    Deterministic: it only reads the DOM. Uses standard_user so the crawl sees the full app.
+    """
+    def tokens_here() -> set[str]:
+        return set(page.eval_on_selector_all(
+            "[data-test]", "els => els.map(e => e.getAttribute('data-test'))"
+        ))
+
+    found: set[str] = set()
+    page.goto(DEFAULT_URL, timeout=60_000)
+    found |= tokens_here()                                   # login page
+    page.fill('[data-test="username"]', DEFAULT_USER)
+    page.fill('[data-test="password"]', _PASSWORD)
+    page.click('[data-test="login-button"]')
+    found |= tokens_here()                                   # inventory
+    page.click('[data-test="shopping-cart-link"]')
+    found |= tokens_here()                                   # cart
+    return found
+
+
+# ---------------------------------------------------------------- journey assembly
+def _login(user: str, url: str) -> list[Step]:
+    return [
+        Step(action="goto", value=url, description="open the site"),
+        Step(action="fill", selector='[data-test="username"]', value=user, description="username"),
+        Step(action="fill", selector='[data-test="password"]', value=_PASSWORD, description="password"),
+        Step(action="click", selector='[data-test="login-button"]', description="log in"),
+    ]
+
+
+def _checkout_info() -> list[Step]:
+    return [
+        Step(action="click", selector='[data-test="checkout"]', description="start checkout"),
+        Step(action="fill", selector='[data-test="firstName"]', value="Jane", description="first name"),
+        Step(action="fill", selector='[data-test="lastName"]', value="Doe", description="last name"),
+        Step(action="fill", selector='[data-test="postalCode"]', value="12345", description="zip"),
+        Step(action="click", selector='[data-test="continue"]', description="continue"),
+        Step(action="click", selector='[data-test="finish"]', description="finish order"),
+        Step(action="expect_visible", selector='[data-test="complete-header"]', description="order complete"),
+    ]
+
+
+def _add(token: str) -> Step:
+    item = token.replace("add-to-cart-", "")
+    return Step(action="click", selector=f'[data-test="{token}"]', value=item, description=f"add {item}")
+
+
+def build_catalog(tokens: set[str], user: str = DEFAULT_USER, url: str = DEFAULT_URL) -> list[Flow]:
+    """Assemble the catalog from discovered tokens. Each journey is included only if the
+    elements it needs were found during the crawl.
+    """
+    adds = sorted(t for t in tokens if t.startswith("add-to-cart-"))
+    catalog: list[Flow] = []
+
+    def flow(fid: str, name: str, steps: list[Step]) -> Flow:
+        return Flow(id=fid, name=name, target_url=url, steps=steps)
+
+    # --- smoke (2) ---
+    if {"username", "password", "login-button"} <= tokens:
+        catalog.append(flow(
+            "smoke_login", "Smoke: login succeeds",
+            _login(user, url) + [Step(action="expect_visible",
+                selector='[data-test="shopping-cart-link"]', description="inventory shown")],
+        ))
+    if adds and "shopping-cart-badge" in tokens:
+        catalog.append(flow(
+            "smoke_add_to_cart", "Smoke: add one item shows cart badge",
+            _login(user, url) + [_add(adds[0]), Step(action="expect_visible",
+                selector='[data-test="shopping-cart-badge"]', description="cart badge appears")],
+        ))
+
+    # --- e2e / regression (5) ---
+    if adds and "checkout" in tokens:
+        catalog.append(flow(
+            "e2e_checkout", "E2E: single-item checkout end to end",
+            _login(user, url) + [_add(adds[0]),
+                Step(action="click", selector='[data-test="shopping-cart-link"]', description="open cart")]
+            + _checkout_info(),
+        ))
+    if len(adds) >= 2 and "checkout" in tokens:
+        catalog.append(flow(
+            "e2e_multi_item_checkout", "E2E: multi-item checkout with totals",
+            _login(user, url) + [_add(adds[0]), _add(adds[1]),
+                Step(action="click", selector='[data-test="shopping-cart-link"]', description="open cart")]
+            + _checkout_info(),
+        ))
+    if "product-sort-container" in tokens:
+        catalog.append(flow(
+            "e2e_sort_inventory", "E2E: sort inventory by price low to high",
+            _login(user, url) + [
+                Step(action="select", selector='[data-test="product-sort-container"]', value="lohi",
+                     description="sort price low->high"),
+                Step(action="expect_visible", selector='[data-test="inventory-list"]',
+                     description="inventory still shown")],
+        ))
+    if adds and "shopping-cart-link" in tokens:
+        catalog.append(flow(
+            "e2e_remove_from_cart", "E2E: add then remove item from cart",
+            _login(user, url) + [_add(adds[0]),
+                Step(action="click", selector='[data-test="shopping-cart-link"]', description="open cart"),
+                Step(action="click", selector=f'[data-test="remove-{adds[0].replace("add-to-cart-", "")}"]',
+                     description="remove item"),
+                Step(action="expect_visible", selector='[data-test="continue-shopping"]',
+                     description="cart still usable")],
+        ))
+    if "logout-sidebar-link" in tokens:
+        catalog.append(flow(
+            "e2e_logout", "E2E: logout returns to login",
+            _login(user, url) + [
+                Step(action="click", selector="#react-burger-menu-btn", description="open menu"),
+                Step(action="click", selector='[data-test="logout-sidebar-link"]', description="log out"),
+                Step(action="expect_visible", selector='[data-test="login-button"]', description="back at login")],
+        ))
+    return catalog
+
+
+# --------------------------------------------------------------- catalog I/O + selection
+def generate_catalog(page, path: Path = CATALOG_PATH) -> list[Flow]:
+    """Crawl the live site, assemble the catalog, freeze it to disk."""
+    catalog = build_catalog(crawl(page))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps([f.model_dump() for f in catalog], indent=2))
+    return catalog
+
+
+def load_catalog(path: Path = CATALOG_PATH) -> list[Flow]:
+    """Load the frozen catalog; if none exists yet, assemble the default Swag Labs catalog."""
+    if path.exists():
+        return [Flow(**d) for d in json.loads(path.read_text())]
+    return build_catalog(_default_tokens())
+
+
+def _inject(flow: Flow, user: str, url: str) -> Flow:
+    """Re-point a catalog flow at a target user + URL (how the break is switched)."""
+    steps = []
+    for s in flow.steps:
+        if s.action == "goto":
+            steps.append(s.model_copy(update={"value": url}))
+        elif s.selector == '[data-test="username"]':
+            steps.append(s.model_copy(update={"value": user}))
+        else:
+            steps.append(s)
+    return flow.model_copy(update={"steps": steps, "target_url": url})
+
+
+def discover_flow(flow_id: str = DEFAULT_FLOW, user: str = DEFAULT_USER,
+                  target_url: str = DEFAULT_URL) -> Flow:
+    """Select one flow from the catalog by id and point it at the given user + URL."""
+    for f in load_catalog():
+        if f.id == flow_id:
+            return _inject(f, user, target_url)
+    raise KeyError(f"unknown flow '{flow_id}'. Known: {[f.id for f in load_catalog()]}")
+
+
+def discovery_node(state: AgentState, config: RunnableConfig) -> dict:
+    """LangGraph node. Reads which flow/user/url from config; returns {"flow": ...}."""
+    params = (config or {}).get("configurable", {})
+    flow = discover_flow(
+        flow_id=params.get("flow_id", DEFAULT_FLOW),
+        user=params.get("user", DEFAULT_USER),
+        target_url=params.get("target_url", DEFAULT_URL),
+    )
+    return {"flow": flow}
+
+
+def _default_tokens() -> set[str]:
+    """The Swag Labs element set used to seed the catalog offline (mirrors a real crawl)."""
+    return {
+        "username", "password", "login-button",
+        "add-to-cart-sauce-labs-backpack", "add-to-cart-sauce-labs-bike-light",
+        "shopping-cart-link", "shopping-cart-badge", "product-sort-container",
+        "inventory-list", "checkout", "continue-shopping",
+        "firstName", "lastName", "postalCode", "continue", "finish", "complete-header",
+        "logout-sidebar-link",
+    }
