@@ -21,3 +21,8 @@ trace/
 .DS_Store
 .idea/
 .vscode/
+
+# Local tooling (skills, agent caches)
+.claude/
+.agents/
+skills-lock.json

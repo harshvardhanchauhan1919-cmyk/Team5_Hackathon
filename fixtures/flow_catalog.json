@@ -1,0 +1,405 @@
+[
+  {
+    "id": "smoke_login",
+    "name": "Smoke: login succeeds",
+    "steps": [
+      {
+        "action": "goto",
+        "selector": "",
+        "value": "https://www.saucedemo.com/",
+        "description": "open the site"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"username\"]",
+        "value": "standard_user",
+        "description": "username"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"password\"]",
+        "value": "secret_sauce",
+        "description": "password"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"login-button\"]",
+        "value": "",
+        "description": "log in"
+      },
+      {
+        "action": "expect_visible",
+        "selector": "[data-test=\"shopping-cart-link\"]",
+        "value": "",
+        "description": "inventory shown"
+      }
+    ],
+    "target_url": "https://www.saucedemo.com/"
+  },
+  {
+    "id": "smoke_add_to_cart",
+    "name": "Smoke: add one item shows cart badge",
+    "steps": [
+      {
+        "action": "goto",
+        "selector": "",
+        "value": "https://www.saucedemo.com/",
+        "description": "open the site"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"username\"]",
+        "value": "standard_user",
+        "description": "username"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"password\"]",
+        "value": "secret_sauce",
+        "description": "password"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"login-button\"]",
+        "value": "",
+        "description": "log in"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"add-to-cart-sauce-labs-backpack\"]",
+        "value": "sauce-labs-backpack",
+        "description": "add sauce-labs-backpack"
+      },
+      {
+        "action": "expect_visible",
+        "selector": "[data-test=\"shopping-cart-badge\"]",
+        "value": "",
+        "description": "cart badge appears"
+      }
+    ],
+    "target_url": "https://www.saucedemo.com/"
+  },
+  {
+    "id": "e2e_checkout",
+    "name": "E2E: single-item checkout end to end",
+    "steps": [
+      {
+        "action": "goto",
+        "selector": "",
+        "value": "https://www.saucedemo.com/",
+        "description": "open the site"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"username\"]",
+        "value": "standard_user",
+        "description": "username"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"password\"]",
+        "value": "secret_sauce",
+        "description": "password"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"login-button\"]",
+        "value": "",
+        "description": "log in"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"add-to-cart-sauce-labs-backpack\"]",
+        "value": "sauce-labs-backpack",
+        "description": "add sauce-labs-backpack"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"shopping-cart-link\"]",
+        "value": "",
+        "description": "open cart"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"checkout\"]",
+        "value": "",
+        "description": "start checkout"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"firstName\"]",
+        "value": "Jane",
+        "description": "first name"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"lastName\"]",
+        "value": "Doe",
+        "description": "last name"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"postalCode\"]",
+        "value": "12345",
+        "description": "zip"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"continue\"]",
+        "value": "",
+        "description": "continue"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"finish\"]",
+        "value": "",
+        "description": "finish order"
+      },
+      {
+        "action": "expect_visible",
+        "selector": "[data-test=\"complete-header\"]",
+        "value": "",
+        "description": "order complete"
+      }
+    ],
+    "target_url": "https://www.saucedemo.com/"
+  },
+  {
+    "id": "e2e_multi_item_checkout",
+    "name": "E2E: multi-item checkout with totals",
+    "steps": [
+      {
+        "action": "goto",
+        "selector": "",
+        "value": "https://www.saucedemo.com/",
+        "description": "open the site"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"username\"]",
+        "value": "standard_user",
+        "description": "username"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"password\"]",
+        "value": "secret_sauce",
+        "description": "password"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"login-button\"]",
+        "value": "",
+        "description": "log in"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"add-to-cart-sauce-labs-backpack\"]",
+        "value": "sauce-labs-backpack",
+        "description": "add sauce-labs-backpack"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"add-to-cart-sauce-labs-bike-light\"]",
+        "value": "sauce-labs-bike-light",
+        "description": "add sauce-labs-bike-light"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"shopping-cart-link\"]",
+        "value": "",
+        "description": "open cart"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"checkout\"]",
+        "value": "",
+        "description": "start checkout"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"firstName\"]",
+        "value": "Jane",
+        "description": "first name"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"lastName\"]",
+        "value": "Doe",
+        "description": "last name"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"postalCode\"]",
+        "value": "12345",
+        "description": "zip"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"continue\"]",
+        "value": "",
+        "description": "continue"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"finish\"]",
+        "value": "",
+        "description": "finish order"
+      },
+      {
+        "action": "expect_visible",
+        "selector": "[data-test=\"complete-header\"]",
+        "value": "",
+        "description": "order complete"
+      }
+    ],
+    "target_url": "https://www.saucedemo.com/"
+  },
+  {
+    "id": "e2e_sort_inventory",
+    "name": "E2E: sort inventory by price low to high",
+    "steps": [
+      {
+        "action": "goto",
+        "selector": "",
+        "value": "https://www.saucedemo.com/",
+        "description": "open the site"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"username\"]",
+        "value": "standard_user",
+        "description": "username"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"password\"]",
+        "value": "secret_sauce",
+        "description": "password"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"login-button\"]",
+        "value": "",
+        "description": "log in"
+      },
+      {
+        "action": "select",
+        "selector": "[data-test=\"product-sort-container\"]",
+        "value": "lohi",
+        "description": "sort price low->high"
+      },
+      {
+        "action": "expect_visible",
+        "selector": "[data-test=\"inventory-list\"]",
+        "value": "",
+        "description": "inventory still shown"
+      }
+    ],
+    "target_url": "https://www.saucedemo.com/"
+  },
+  {
+    "id": "e2e_remove_from_cart",
+    "name": "E2E: add then remove item from cart",
+    "steps": [
+      {
+        "action": "goto",
+        "selector": "",
+        "value": "https://www.saucedemo.com/",
+        "description": "open the site"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"username\"]",
+        "value": "standard_user",
+        "description": "username"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"password\"]",
+        "value": "secret_sauce",
+        "description": "password"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"login-button\"]",
+        "value": "",
+        "description": "log in"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"add-to-cart-sauce-labs-backpack\"]",
+        "value": "sauce-labs-backpack",
+        "description": "add sauce-labs-backpack"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"shopping-cart-link\"]",
+        "value": "",
+        "description": "open cart"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"remove-sauce-labs-backpack\"]",
+        "value": "",
+        "description": "remove item"
+      },
+      {
+        "action": "expect_visible",
+        "selector": "[data-test=\"continue-shopping\"]",
+        "value": "",
+        "description": "cart still usable"
+      }
+    ],
+    "target_url": "https://www.saucedemo.com/"
+  },
+  {
+    "id": "e2e_logout",
+    "name": "E2E: logout returns to login",
+    "steps": [
+      {
+        "action": "goto",
+        "selector": "",
+        "value": "https://www.saucedemo.com/",
+        "description": "open the site"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"username\"]",
+        "value": "standard_user",
+        "description": "username"
+      },
+      {
+        "action": "fill",
+        "selector": "[data-test=\"password\"]",
+        "value": "secret_sauce",
+        "description": "password"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"login-button\"]",
+        "value": "",
+        "description": "log in"
+      },
+      {
+        "action": "click",
+        "selector": "#react-burger-menu-btn",
+        "value": "",
+        "description": "open menu"
+      },
+      {
+        "action": "click",
+        "selector": "[data-test=\"logout-sidebar-link\"]",
+        "value": "",
+        "description": "log out"
+      },
+      {
+        "action": "expect_visible",
+        "selector": "[data-test=\"login-button\"]",
+        "value": "",
+        "description": "back at login"
+      }
+    ],
+    "target_url": "https://www.saucedemo.com/"
+  }
+]
