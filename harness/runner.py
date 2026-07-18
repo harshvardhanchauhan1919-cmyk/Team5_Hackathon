@@ -32,7 +32,7 @@ from agents.repair import repair_node
 from agents.script_gen import script_gen_node
 from harness.cases import Case, load_cases
 from harness.step_executor import run_flow
-from harness.verify import verify_healed
+from harness.verify import verify_healed_live
 from schemas import AgentState, RunResult
 
 REPORT_PATH = Path(__file__).parent / "report.json"
@@ -104,7 +104,7 @@ def run_case(app, case: Case, headless: bool = True) -> dict:
     verified = None
     verify_reason = None
     if healed:
-        v = verify_healed(final_state, headless=headless)
+        v = verify_healed_live(final_state, headless=headless)
         verified, verify_reason = v.verified, v.reason
 
     return {

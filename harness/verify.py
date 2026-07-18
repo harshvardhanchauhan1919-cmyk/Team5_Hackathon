@@ -1,22 +1,61 @@
-"""F3 — "healed is truly healed" verification (Epic F, the proof).
+""""Healed is truly healed" verification (F3) — Scoreboard + Healing.
 
-A repair that passes for the wrong reason is a demo-killer. This module
-re-checks any case the pipeline reported as "healed" before F2's scoreboard
-is allowed to count it as a win.
+A repair that passes for the wrong reason is a demo-killer. Two complementary
+checks live here (both pairs touch this file per BRANCH_OWNERSHIP.md, so keep
+them separate rather than merging the logic):
 
-Note on scope: this file is Scoreboard's (F3), coordinate with Healing before
-adding anything here — they also touch this file for their half of F3 per
-BRANCH_OWNERSHIP.md.
+- `verify_healed(result, original_result=None)` — Healing's lightweight check:
+  does this RunResult look like a clean pass? Used by tools/test_observer.py
+  and the pipeline itself right after a repair attempt.
+- `verify_healed_live(state, headless=True)` — Scoreboard's deeper check: an
+  independent, fresh Playwright re-run (not the cached RunResult) that also
+  confirms the flow wasn't short-circuited. Used by harness/runner.py before
+  F2's scoreboard is allowed to count a case as healed.
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
+from typing import Optional
 
 from playwright.sync_api import sync_playwright
 
 from harness.selectors import CHECKOUT_FLOW
 from harness.step_executor import run_flow
-from schemas import AgentState
+from schemas import AgentState, RunResult
+
+logger = logging.getLogger(__name__)
+
+
+def verify_healed(result: RunResult, original_result: Optional[RunResult] = None) -> bool:
+    """Verify that a repaired execution is successful.
+
+    Args:
+        result: The RunResult of the latest execution after repair.
+        original_result: The original failing RunResult before repair (optional).
+
+    Returns:
+        True if the script execution is successful and contains no errors.
+    """
+    if result.status != "pass":
+        logger.info("Verification failed: RunResult status is %s (expected 'pass')", result.status)
+        return False
+
+    if result.error is not None:
+        logger.info("Verification failed: RunResult has an error: %s", result.error.message)
+        return False
+
+    # Optional check: make sure we did not regress on some steps
+    if original_result and original_result.error:
+        logger.info(
+            "Verification successful: Repaired execution passed. Original error was %s at step %d.",
+            original_result.error.kind,
+            original_result.error.step_index,
+        )
+    else:
+        logger.info("Verification successful: Execution passed.")
+
+    return True
 
 
 @dataclass
@@ -25,8 +64,9 @@ class VerifyResult:
     reason: str
 
 
-def verify_healed(state: AgentState, headless: bool = True) -> VerifyResult:
-    """Given a final AgentState the pipeline reported as "healed", double-check it.
+def verify_healed_live(state: AgentState, headless: bool = True) -> VerifyResult:
+    """Given a final AgentState the pipeline reported as "healed", double-check it
+    with a fresh, independent Playwright run rather than trusting the cached RunResult.
 
     Checks, in order:
     1. At least one repair attempt actually happened — a "pass" with zero
