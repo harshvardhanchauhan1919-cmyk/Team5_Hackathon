@@ -22,21 +22,21 @@
     "healed": false,
     "verified_healed": null,
     "verify_reason": null,
-    "final_error_kind": "missing_element",
-    "final_error_message": "Page.click: Timeout 3000ms exceeded. (page shows an error banner: 'Error: Last Name is required')"
+    "final_error_kind": "flow_change",
+    "final_error_message": "run() takes 0 positional arguments but 1 was given"
   },
   {
     "case_id": "checkout_performance_glitch_user",
     "user": "performance_glitch_user",
     "expected_kind": "timeout",
-    "initial_status": "fail",
-    "final_status": "fail",
-    "repair_attempt_count": 3,
+    "initial_status": "pass",
+    "final_status": "pass",
+    "repair_attempt_count": 0,
     "healed": false,
     "verified_healed": null,
     "verify_reason": null,
-    "final_error_kind": "timeout",
-    "final_error_message": "Page.click: Timeout 3000ms exceeded."
+    "final_error_kind": null,
+    "final_error_message": null
   },
   {
     "case_id": "checkout_error_user",
@@ -48,8 +48,8 @@
     "healed": false,
     "verified_healed": null,
     "verify_reason": null,
-    "final_error_kind": "selector",
-    "final_error_message": "Locator.wait_for: Timeout 3000ms exceeded."
+    "final_error_kind": "flow_change",
+    "final_error_message": "run() takes 0 positional arguments but 1 was given"
   },
   {
     "case_id": "checkout_locked_out_user",
@@ -61,7 +61,7 @@
     "healed": false,
     "verified_healed": null,
     "verify_reason": null,
-    "final_error_kind": "missing_element",
-    "final_error_message": "Page.click: Timeout 3000ms exceeded. (page shows an error banner: 'Epic sadface: Sorry, this user has been locked out.')"
+    "final_error_kind": "flow_change",
+    "final_error_message": "run() takes 0 positional arguments but 1 was given"
   }
 ]
