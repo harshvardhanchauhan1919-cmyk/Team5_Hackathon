@@ -27,7 +27,8 @@ def test_run_issues_expected_playwright_calls():
         def wait_for_selector(self, sel, **kw): calls.append(("wait", sel))
 
     ns: dict = {}
-    exec(compile(render_script(discover_flow("e2e_checkout", user="standard_user")), "<g>", "exec"), ns)
+    code = render_script(discover_flow("e2e_checkout", user="standard_user"))
+    exec(compile(code, "<g>", "exec"), ns)
     ns["run"](FakePage())
     assert calls[0] == ("goto", "https://www.saucedemo.com/")
     assert ("fill", '[data-test="username"]', "standard_user") in calls

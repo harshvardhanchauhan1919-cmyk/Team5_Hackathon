@@ -1,10 +1,10 @@
 """Tests for the Flow Discovery agent (D1) — crawl, catalog, selection, break injection."""
 from agents.discovery import (
+    _default_tokens,
     build_catalog,
     crawl,
     discover_flow,
     discovery_node,
-    _default_tokens,
 )
 from schemas import AgentState
 
