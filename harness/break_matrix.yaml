@@ -1,0 +1,37 @@
+standard_user:
+  user: standard_user
+  observed_kind: null
+  message: flow completed end-to-end with no observed failure
+  failed_step: null
+  failed_step_description: null
+  evidence: C:\Dev\claude-code-hackaton\harness\fixtures\break_matrix\standard_user.png
+problem_user:
+  user: problem_user
+  observed_kind: missing_element
+  message: 'Locator.wait_for: Timeout 3000ms exceeded. (page shows an error banner:
+    ''Error: Last Name is required'')'
+  failed_step: 14
+  failed_step_description: Overview page shows finish button
+  evidence: C:\Dev\claude-code-hackaton\harness\fixtures\break_matrix\problem_user.png
+performance_glitch_user:
+  user: performance_glitch_user
+  observed_kind: timeout
+  message: 'Page.click: Timeout 3000ms exceeded.'
+  failed_step: 3
+  failed_step_description: Submit login
+  evidence: C:\Dev\claude-code-hackaton\harness\fixtures\break_matrix\performance_glitch_user.png
+error_user:
+  user: error_user
+  observed_kind: selector
+  message: 'Locator.wait_for: Timeout 3000ms exceeded.'
+  failed_step: 16
+  failed_step_description: Order complete confirmation shown
+  evidence: C:\Dev\claude-code-hackaton\harness\fixtures\break_matrix\error_user.png
+locked_out_user:
+  user: locked_out_user
+  observed_kind: missing_element
+  message: 'Locator.wait_for: Timeout 3000ms exceeded. (page shows an error banner:
+    ''Epic sadface: Sorry, this user has been locked out.'')'
+  failed_step: 4
+  failed_step_description: Land on inventory page
+  evidence: C:\Dev\claude-code-hackaton\harness\fixtures\break_matrix\locked_out_user.png
