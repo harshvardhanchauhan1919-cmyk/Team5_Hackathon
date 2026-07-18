@@ -1,0 +1,27 @@
+# Self-Healing Browser Automation Agent — dependencies
+# Install with:  pip install -r requirements.txt
+#           then: playwright install chromium
+# Python 3.12+ required.
+
+# --- Agent framework (LangGraph) ---
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-openai>=0.2.0          # OpenRouter is OpenAI-compatible; we use this client
+
+# --- Browser automation / testing ---
+playwright>=1.47.0
+pytest>=8.0.0
+pytest-playwright>=0.5.0
+
+# --- Data models / config ---
+pydantic>=2.7.0
+python-dotenv>=1.0.0             # loads .env (OPENROUTER_API_KEY etc.)
+pyyaml>=6.0.1                    # reads models.yaml role->model map
+
+# --- UI (pipeline view + artifact gallery) ---
+streamlit>=1.37.0               # fastest good-looking UI for the demo
+
+# --- Dev / quality ---
+ruff>=0.6.0                     # lint + format (used in CI)
+rich>=13.7.0                    # pretty console output for the harness/scoreboard

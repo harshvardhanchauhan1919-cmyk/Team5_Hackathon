@@ -1,0 +1,28 @@
+# Secrets — NEVER commit
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Playwright / run artifacts
+hello_world/artifacts/
+test-results/
+playwright-report/
+*.webm
+*.zip
+trace/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local tooling (skills, agent caches)
+.claude/
+.agents/
+skills-lock.json

@@ -1,0 +1,8 @@
+# Map agent ROLES to models — never hardcode a model in code.
+# Switch tiers by editing strings here. OpenRouter model IDs.
+discovery:   deepseek/deepseek-chat          # cheap workhorse
+script_gen:  qwen/qwen-2.5-coder-32b-instruct # cheap, strong at code
+execution:   none                            # deterministic, no LLM
+diagnosis:   anthropic/claude-sonnet-4       # reasoning tier
+repair:      anthropic/claude-sonnet-4       # reasoning tier
+dev_default: deepseek/deepseek-chat:free     # free tier — DEV/TESTING ONLY, never in the recorded demo
