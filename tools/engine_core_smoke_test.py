@@ -5,17 +5,17 @@ returns a structured result for a flow with a missing element.
 """
 from __future__ import annotations
 
-from pathlib import Path
 import sys
 import tempfile
 import textwrap
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from schemas import AgentState, Flow, Script, Step
-from tools.execution import execution_node
+from schemas import AgentState, Flow, Script, Step  # noqa: E402
+from tools.execution import execution_node  # noqa: E402
 
 
 def build_sample_page(path: Path) -> None:
@@ -55,7 +55,11 @@ def main() -> None:
         result = updated.result
         if result is None:
             raise SystemExit("execution_node did not produce a result")
-        if result.status != "fail" or result.error is None or result.error.kind != "missing_element":
+        if (
+            result.status != "fail"
+            or result.error is None
+            or result.error.kind != "missing_element"
+        ):
             raise SystemExit(f"unexpected result: {result.model_dump()}")
         print("engine_core smoke test passed")
         print(result.model_dump_json(indent=2))
