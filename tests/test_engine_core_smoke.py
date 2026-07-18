@@ -1,12 +1,12 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from schemas import AgentState, Flow, Script, Step
-from tools.execution import execution_node
+from schemas import AgentState, Flow, Script  # noqa: E402
+from tools.execution import execution_node  # noqa: E402
 
 
 def test_engine_core_reports_missing_element():

@@ -63,7 +63,11 @@ def main() -> int:
     elif result is not None and result.status == "pass":
         print("pipeline complete: PASS")
     else:
-        print("pipeline complete: FAIL", "-", result.error.kind if result and result.error else "no result")
+        print(
+            "pipeline complete: FAIL",
+            "-",
+            result.error.kind if result and result.error else "no result",
+        )
     return 0 if (result is not None and result.status == "pass") else 1
 
 
