@@ -7,18 +7,17 @@ No LLM and no network needed — the stubs return canned typed state.
 import sys
 from pathlib import Path
 
-# Put the repo root on sys.path BEFORE importing local packages, so this script
+# Put the repo root on sys.path before importing local packages so this script
 # runs whether launched as `python hello_world/hello_langgraph.py` or `-m`.
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from graph.build import build_graph  # noqa: E402, I001
+from schemas import AgentState  # noqa: E402
+
 
 def main() -> None:
-    from graph.build import build_graph
-
-    from schemas import AgentState
-
     app = build_graph()
     final = app.invoke(AgentState())
     result = final.get("result") if isinstance(final, dict) else final.result
