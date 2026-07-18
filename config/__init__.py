@@ -21,6 +21,10 @@ def model_for(role: str):
 
     Import lazily so the schema/graph packages don't require langchain to import.
     """
+    if os.getenv("USE_MOCK") == "1":
+        from tools.mock_llm import fake_model_for
+        return fake_model_for(role)
+
     from langchain_openai import ChatOpenAI
 
     model = CFG[role]
