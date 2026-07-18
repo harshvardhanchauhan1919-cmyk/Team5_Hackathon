@@ -14,12 +14,14 @@ def test_engine_core_reports_missing_element():
         id="smoke-flow",
         name="missing element smoke test",
         target_url="about:blank",
-        steps=[
-            Step(action="goto", value="about:blank", description="open blank page"),
-            Step(action="click", selector="#does-not-exist", description="missing button"),
-        ],
+        steps=[],
     )
-    state = AgentState(flow=flow, script=Script(flow_id=flow.id, code=""))
+    script_code = """
+def run(page):
+    page.goto('about:blank')
+    page.click('#does-not-exist')
+"""
+    state = AgentState(flow=flow, script=Script(flow_id=flow.id, code=script_code))
     updated = execution_node(state)
     result = updated.result
     assert result is not None

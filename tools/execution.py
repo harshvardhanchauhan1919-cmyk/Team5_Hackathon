@@ -5,7 +5,6 @@ artifacts plus structured errors. Deterministic, no LLM.
 """
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -29,22 +28,13 @@ def _artifact_dir(state: AgentState) -> Path:
     return base
 
 
-def _run_step(page: Any, step: Any) -> None:
-    action = step.action
-    if action == "goto":
-        page.goto(step.value, wait_until="domcontentloaded")
-    elif action == "fill":
-        locator = page.locator(step.selector) if step.selector else None
-        if locator is None:
-            raise ValueError("fill step is missing a selector")
-        locator.fill(step.value)
-    elif action == "click":
-        locator = page.locator(step.selector) if step.selector else None
-        if locator is None:
-            raise ValueError("click step is missing a selector")
-        locator.click()
-    else:
-        raise ValueError(f"unsupported action: {action}")
+def _classify_error(exc: Exception) -> tuple[str, int]:
+    message = str(exc).lower()
+    if "waiting for locator" in message or "strict mode" in message or "no node found" in message:
+        return "missing_element", 0
+    if "timeout" in message:
+        return "timeout", 0
+    return "selector", 0
 
 
 def execution_node(state: AgentState) -> AgentState:
@@ -54,56 +44,53 @@ def execution_node(state: AgentState) -> AgentState:
     artifact_dir = _artifact_dir(state)
     screenshot_path = artifact_dir / f"{state.flow.id}.png"
     trace_path = artifact_dir / f"{state.flow.id}.zip"
-    logs: list[str] = []
 
     try:
+        namespace: dict[str, Any] = {}
+        exec(compile(state.script.code, "<generated>", "exec"), namespace)
+        run_fn = namespace.get("run")
+        if not callable(run_fn):
+            raise ValueError("generated script must define a callable run(page)")
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
             try:
-                for step in state.flow.steps:
-                    LOGGER.info("executing step %s: %s", step.action, step.description or step.selector)
-                    _run_step(page, step)
+                run_fn(page)
                 page.screenshot(path=str(screenshot_path))
-                browser.close()
             except PlaywrightError as exc:
-                browser.close()
-                logs.append(str(exc))
-                error_kind = "selector"
-                if "waiting for locator" in str(exc).lower() or "strict mode" in str(exc).lower():
-                    error_kind = "missing_element"
-                error = Error(
-                    kind=error_kind,
-                    message=str(exc),
-                    step_index=0,
-                )
+                kind, step_index = _classify_error(exc)
                 state.result = RunResult(
                     script_id=state.script.flow_id,
                     status="fail",
-                    logs="\n".join(logs),
+                    logs=str(exc),
                     screenshots=[str(screenshot_path)],
                     trace=str(trace_path),
-                    error=error,
+                    error=Error(kind=kind, message=str(exc), step_index=step_index),
                 )
+                browser.close()
                 return state
             except Exception as exc:  # pragma: no cover - defensive fallback
-                browser.close()
-                logs.append(str(exc))
-                error = Error(kind="flow_change", message=str(exc), step_index=-1)
                 state.result = RunResult(
                     script_id=state.script.flow_id,
                     status="fail",
-                    logs="\n".join(logs),
+                    logs=str(exc),
                     screenshots=[str(screenshot_path)],
                     trace=str(trace_path),
-                    error=error,
+                    error=Error(kind="flow_change", message=str(exc), step_index=-1),
                 )
+                browser.close()
                 return state
+            finally:
+                try:
+                    browser.close()
+                except Exception:
+                    pass
 
         state.result = RunResult(
             script_id=state.script.flow_id,
             status="pass",
-            logs="\n".join(logs) if logs else "execution completed",
+            logs="execution completed",
             screenshots=[str(screenshot_path)],
             trace=str(trace_path),
         )
