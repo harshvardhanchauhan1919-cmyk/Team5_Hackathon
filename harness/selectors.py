@@ -12,6 +12,7 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
+from credentials import DEFAULT_USER, PASSWORD
 from harness.step_executor import run_flow
 from schemas import Flow, Step
 
@@ -62,7 +63,7 @@ def capture_and_verify(headless: bool = True) -> list[dict]:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless)
         page = browser.new_page()
-        context = {"username": "standard_user", "password": "secret_sauce"}
+        context = {"username": DEFAULT_USER, "password": PASSWORD}
         outcome = run_flow(page, CHECKOUT_FLOW.steps, context)
         for s in outcome.steps:
             report.append({

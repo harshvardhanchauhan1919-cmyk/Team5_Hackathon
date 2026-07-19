@@ -28,6 +28,23 @@ def _artifact_dir(state: AgentState) -> Path:
     return base
 
 
+def _artifact_stem(state: AgentState) -> str:
+    """Unique per-case, per-attempt name so evidence never overwrites.
+
+    Includes the target user (pulled from the flow's login step) and the attempt
+    number (0 = initial run, 1+ = after each repair), giving before/after evidence.
+    """
+    user = "unknown_user"
+    if state.flow is not None:
+        for step in state.flow.steps:
+            if step.selector == '[data-test="username"]' and step.value:
+                user = step.value
+                break
+    attempt = len(state.repair_attempts)  # 0 before any repair, N after N repairs
+    flow_id = state.flow.id if state.flow else "flow"
+    return f"{flow_id}__{user}__attempt{attempt}"
+
+
 def _classify_error(exc: Exception) -> tuple[str, int]:
     message = str(exc).lower()
     if "waiting for locator" in message or "strict mode" in message or "no node found" in message:
@@ -42,8 +59,9 @@ def execution_node(state: AgentState) -> AgentState:
     assert state.flow is not None
 
     artifact_dir = _artifact_dir(state)
-    screenshot_path = artifact_dir / f"{state.flow.id}.png"
-    trace_path = artifact_dir / f"{state.flow.id}.zip"
+    stem = _artifact_stem(state)
+    screenshot_path = artifact_dir / f"{stem}.png"
+    trace_path = artifact_dir / f"{stem}.zip"
 
     try:
         namespace: dict[str, Any] = {}
