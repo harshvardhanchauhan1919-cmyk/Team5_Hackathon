@@ -12,6 +12,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from schemas import AgentState
 from ui.components.gallery import render_gallery
 from ui.components.pipeline import render_pipeline
+from ui.components.scoreboard import render_scoreboard
+from ui.components.selector_baseline import render_selector_baseline
 from ui.mock_state import state_diagnosed, state_failed, state_healed, state_pending
 
 # Set page config for premium appearance
@@ -164,6 +166,15 @@ def main() -> None:
 
     # Render gallery & log viewer (G2-G3)
     render_gallery(current_state)
+
+    # ------------------------------------------------------------------
+    # Harness output, surfaced on the same page (plan_ui_extension.md)
+    # ------------------------------------------------------------------
+    st.divider()
+    render_selector_baseline()
+
+    st.divider()
+    render_scoreboard()
 
 
 if __name__ == "__main__":

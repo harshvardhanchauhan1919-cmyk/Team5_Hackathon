@@ -93,11 +93,13 @@ def render_gallery(state: AgentState) -> None:
                             # Real browser capture from the Execution node.
                             st.image(img_path, caption=img_path)
                         else:
-                            # Fallback when the file isn't on disk (e.g. mock states).
-                            st.image(
-                                "https://placehold.co/600x400/0f172a/e2e8f0/png?text="
-                                + os.path.basename(img_path).replace(" ", "+"),
-                                caption=img_path,
+                            # Fallback when the file isn't on disk (e.g. mock states) —
+                            # a self-contained placeholder, no external network call.
+                            st.html(
+                                '<div class="artifact-card">'
+                                '<div class="artifact-icon">🖼️</div>'
+                                f'<div class="artifact-name">{os.path.basename(img_path)}</div>'
+                                "</div>"
                             )
             else:
                 st.info("No screenshots available.")
