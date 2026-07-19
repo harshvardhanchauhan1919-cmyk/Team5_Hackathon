@@ -1,6 +1,8 @@
 """Artifact Gallery Component (G2) — Renders screenshots, video, logs, and diagnoses."""
 from __future__ import annotations
 
+import os
+
 import streamlit as st
 
 from schemas import AgentState
@@ -87,12 +89,16 @@ def render_gallery(state: AgentState) -> None:
                     col_idx = idx % len(cols)
                     with cols[col_idx]:
                         st.write(f"**{label}**")
-                        # Show placeholder or path
-                        st.image(
-                            "https://placehold.co/600x400/0f172a/e2e8f0/png?text="
-                            + img_path.replace(" ", "+"),
-                            caption=img_path,
-                        )
+                        if os.path.exists(img_path):
+                            # Real browser capture from the Execution node.
+                            st.image(img_path, caption=img_path)
+                        else:
+                            # Fallback when the file isn't on disk (e.g. mock states).
+                            st.image(
+                                "https://placehold.co/600x400/0f172a/e2e8f0/png?text="
+                                + os.path.basename(img_path).replace(" ", "+"),
+                                caption=img_path,
+                            )
             else:
                 st.info("No screenshots available.")
 
