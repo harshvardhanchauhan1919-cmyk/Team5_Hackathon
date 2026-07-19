@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import sync_playwright
@@ -42,7 +43,16 @@ def _artifact_stem(state: AgentState) -> str:
                 break
     attempt = len(state.repair_attempts)  # 0 before any repair, N after N repairs
     flow_id = state.flow.id if state.flow else "flow"
-    return f"{flow_id}__{user}__attempt{attempt}"
+
+    # Same flow + same user but a different `?break=` mode (e.g. test_website's cases)
+    # would otherwise collide on one stem and overwrite each other's evidence.
+    break_suffix = ""
+    if state.flow is not None:
+        break_mode = parse_qs(urlparse(state.flow.target_url).query).get("break", [None])[0]
+        if break_mode:
+            break_suffix = f"__{break_mode}"
+
+    return f"{flow_id}__{user}{break_suffix}__attempt{attempt}"
 
 
 def _classify_error(exc: Exception) -> tuple[str, int]:
@@ -52,6 +62,30 @@ def _classify_error(exc: Exception) -> tuple[str, int]:
     if "timeout" in message:
         return "timeout", 0
     return "selector", 0
+
+
+def _dump_live_tokens(page) -> str:
+    """Best-effort snapshot of what's actually on the page right now.
+
+    On a genuine DOM change (a real site rename, not a synthetic corrupted-selector
+    string) diagnosis/repair otherwise see only the failing selector and never learn
+    what replaced it. Appending the live token set to logs gives the healing loop a
+    real chance to find the renamed element instead of guessing blind.
+    """
+    try:
+        tokens = sorted(set(page.eval_on_selector_all(
+            "[data-test]", "els => els.map(e => e.getAttribute('data-test'))"
+        )))
+        return "live data-test attributes currently on page: " + ", ".join(tokens)
+    except Exception as dump_exc:  # pragma: no cover - best effort only
+        return f"(could not read live data-test attributes: {dump_exc})"
+
+
+def _safe_screenshot(page, path: Path) -> None:
+    try:
+        page.screenshot(path=str(path))
+    except Exception:  # pragma: no cover - page may already be in a bad state
+        pass
 
 
 def execution_node(state: AgentState) -> AgentState:
@@ -78,10 +112,11 @@ def execution_node(state: AgentState) -> AgentState:
                 page.screenshot(path=str(screenshot_path))
             except PlaywrightError as exc:
                 kind, step_index = _classify_error(exc)
+                _safe_screenshot(page, screenshot_path)
                 state.result = RunResult(
                     script_id=state.script.flow_id,
                     status="fail",
-                    logs=str(exc),
+                    logs=f"{exc}\n\n{_dump_live_tokens(page)}",
                     screenshots=[str(screenshot_path)],
                     trace=str(trace_path),
                     error=Error(kind=kind, message=str(exc), step_index=step_index),
@@ -89,10 +124,11 @@ def execution_node(state: AgentState) -> AgentState:
                 browser.close()
                 return state
             except Exception as exc:  # pragma: no cover - defensive fallback
+                _safe_screenshot(page, screenshot_path)
                 state.result = RunResult(
                     script_id=state.script.flow_id,
                     status="fail",
-                    logs=str(exc),
+                    logs=f"{exc}\n\n{_dump_live_tokens(page)}",
                     screenshots=[str(screenshot_path)],
                     trace=str(trace_path),
                     error=Error(kind="flow_change", message=str(exc), step_index=-1),
