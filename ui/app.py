@@ -110,26 +110,30 @@ def main() -> None:
         st.sidebar.subheader("🚀 Live Runner Controls")
         st.sidebar.info("Runs the compiled LangGraph pipeline live against Swag Labs.")
 
-        # Pick a scenario. "Break a selector" is the one that reliably heals — it's a
-        # real script-vs-page break the AI can fix (see harness SELECTOR_BREAK_CASE).
+        # Scenarios. The two "break selector" runs are genuine script-vs-page breaks the
+        # AI fixes (real heals). The locked-out account is an honest non-heal that F3
+        # correctly rejects — a good contrast to show the verification actually works.
         scenario = st.sidebar.selectbox(
             "Scenario",
             [
-                "Healthy run (standard_user, should pass)",
-                "Break a selector (should heal)",
-                "problem_user (buggy account)",
-                "performance_glitch_user (slow account)",
+                "Healthy run (standard_user) — should pass",
+                "Break add-to-cart selector — should heal",
+                "Break checkout selector — should heal",
+                "Locked-out account — correctly NOT healed",
             ],
             index=1,
         )
         _CONFIGS = {
-            "Healthy run (standard_user, should pass)": {"user": "standard_user"},
-            "Break a selector (should heal)": {
+            "Healthy run (standard_user) — should pass": {"user": "standard_user"},
+            "Break add-to-cart selector — should heal": {
                 "user": "standard_user",
                 "break_selector": '[data-test="add-to-cart-sauce-labs-backpack"]',
             },
-            "problem_user (buggy account)": {"user": "problem_user"},
-            "performance_glitch_user (slow account)": {"user": "performance_glitch_user"},
+            "Break checkout selector — should heal": {
+                "user": "standard_user",
+                "break_selector": '[data-test="checkout"]',
+            },
+            "Locked-out account — correctly NOT healed": {"user": "locked_out_user"},
         }
 
         if st.sidebar.button("Run Live Pipeline"):
