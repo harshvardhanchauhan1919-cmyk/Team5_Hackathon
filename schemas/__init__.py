@@ -67,6 +67,13 @@ class AgentState(BaseModel):
     flow: Optional[Flow] = None
     script: Optional[Script] = None
     result: Optional[RunResult] = None
+    # The very first execution_node result (set once, never overwritten). `result`
+    # gets replaced by each subsequent re-run after a repair, so once healing
+    # succeeds `result` holds the final PASS and the original failure — its error,
+    # its "broken" screenshot — would otherwise be lost. The UI's healing-summary
+    # panel needs both: what broke (original_result) and what it looks like now
+    # (result / repair_attempts[-1].result).
+    original_result: Optional[RunResult] = None
     diagnosis: Optional[Diagnosis] = None
     repair_attempts: list[RepairAttempt] = Field(default_factory=list)
     max_attempts: int = 3            # give-up-after-N

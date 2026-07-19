@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -108,33 +109,81 @@ def main() -> None:
         # Live Graph Execution
         st.sidebar.markdown("---")
         st.sidebar.subheader("🚀 Live Runner Controls")
-        st.sidebar.info("Runs the compiled LangGraph pipeline live against Swag Labs.")
 
-        # Scenarios. The two "break selector" runs are genuine script-vs-page breaks the
-        # AI fixes (real heals). The locked-out account is an honest non-heal that F3
-        # correctly rejects — a good contrast to show the verification actually works.
-        scenario = st.sidebar.selectbox(
-            "Scenario",
-            [
-                "Healthy run (standard_user) — should pass",
-                "Break add-to-cart selector — should heal",
-                "Break checkout selector — should heal",
-                "Locked-out account — correctly NOT healed",
-            ],
-            index=1,
+        target_site = st.sidebar.selectbox(
+            "Target site",
+            ["Swag Labs (saucedemo.com)", "test_website (local, http://localhost:3000)"],
+            index=0,
         )
-        _CONFIGS = {
-            "Healthy run (standard_user) — should pass": {"user": "standard_user"},
-            "Break add-to-cart selector — should heal": {
+
+        if target_site == "Swag Labs (saucedemo.com)":
+            st.sidebar.info("Runs the compiled LangGraph pipeline live against Swag Labs.")
+
+            # Scenarios. The two "break selector" runs are genuine script-vs-page breaks the
+            # AI fixes (real heals). The locked-out account is an honest non-heal that F3
+            # correctly rejects — a good contrast to show the verification actually works.
+            scenario = st.sidebar.selectbox(
+                "Scenario",
+                [
+                    "Healthy run (standard_user) — should pass",
+                    "Break add-to-cart selector — should heal",
+                    "Break checkout selector — should heal",
+                    "Locked-out account — correctly NOT healed",
+                ],
+                index=1,
+            )
+            _CONFIGS = {
+                "Healthy run (standard_user) — should pass": {"user": "standard_user"},
+                "Break add-to-cart selector — should heal": {
+                    "user": "standard_user",
+                    "break_selector": '[data-test="add-to-cart-sauce-labs-backpack"]',
+                },
+                "Break checkout selector — should heal": {
+                    "user": "standard_user",
+                    "break_selector": '[data-test="checkout"]',
+                },
+                "Locked-out account — correctly NOT healed": {"user": "locked_out_user"},
+            }
+            base_configurable = {
+                "flow_id": "e2e_checkout",
+                "target_url": "https://www.saucedemo.com/",
+                **_CONFIGS[scenario],
+            }
+        else:
+            st.sidebar.info(
+                "Runs the compiled LangGraph pipeline live against the local test_website "
+                "clone — genuine server-side data-test attribute renames via ?break=<mode>, "
+                "not synthetic string corruption. Make sure `npm run dev` is running on "
+                "http://localhost:3000."
+            )
+
+            # Mirrors harness/test_website_cases.py's BREAK_MODES. All test_website cases
+            # use standard_user and need no break_selector — the break is server-side and
+            # already encoded in the target URL.
+            scenario = st.sidebar.selectbox(
+                "Scenario",
+                [
+                    "Baseline (no break) — should pass",
+                    "Break cart selector — should heal",
+                    "Break continue selector — should heal",
+                    "Break complete selector — should heal",
+                    "Checkout delay — passes without healing (control case)",
+                ],
+                index=1,
+            )
+            _TEST_WEBSITE_TARGETS = {
+                "Baseline (no break) — should pass": "http://localhost:3000/",
+                "Break cart selector — should heal": "http://localhost:3000/?break=cart_selector",
+                "Break continue selector — should heal": "http://localhost:3000/?break=continue_selector",
+                "Break complete selector — should heal": "http://localhost:3000/?break=complete_selector",
+                "Checkout delay — passes without healing (control case)":
+                    "http://localhost:3000/?break=checkout_delay",
+            }
+            base_configurable = {
+                "flow_id": "e2e_checkout",
+                "target_url": _TEST_WEBSITE_TARGETS[scenario],
                 "user": "standard_user",
-                "break_selector": '[data-test="add-to-cart-sauce-labs-backpack"]',
-            },
-            "Break checkout selector — should heal": {
-                "user": "standard_user",
-                "break_selector": '[data-test="checkout"]',
-            },
-            "Locked-out account — correctly NOT healed": {"user": "locked_out_user"},
-        }
+            }
 
         if st.sidebar.button("Run Live Pipeline"):
             from graph.build import build_graph
@@ -142,11 +191,7 @@ def main() -> None:
             st.sidebar.warning("Executing Graph...")
             try:
                 app = build_graph()
-                configurable = {
-                    "flow_id": "e2e_checkout",
-                    "target_url": "https://www.saucedemo.com/",
-                    **_CONFIGS[scenario],
-                }
+                configurable = base_configurable
                 # Discovery reads flow/user/break from config; no need to pre-seed state.
                 final_state_dict = app.invoke(
                     AgentState(max_attempts=max_attempts, hitl=hitl),
@@ -178,7 +223,14 @@ def main() -> None:
     render_selector_baseline()
 
     st.divider()
-    render_scoreboard()
+    saucedemo_tab, test_site_tab = st.tabs(["Saucedemo scoreboard", "test_site scoreboard"])
+    with saucedemo_tab:
+        render_scoreboard("Saucedemo scoreboard - auto-repair metrics")
+    with test_site_tab:
+        render_scoreboard(
+            "test_site scoreboard - auto-repair metrics",
+            Path(__file__).resolve().parents[1] / "harness" / "report_test_website.json",
+        )
 
 
 if __name__ == "__main__":

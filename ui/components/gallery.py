@@ -26,7 +26,10 @@ def render_heal_summary(state: AgentState) -> None:
             )
             if corrupted:
                 st.markdown(f"Corrupted selector:\n\n`{corrupted}`")
-            err = state.result.error if state.result else None
+            # Use the ORIGINAL failure, not state.result — once healing succeeds,
+            # state.result is the final PASS and its .error is None.
+            original = state.original_result or state.result
+            err = original.error if original else None
             if err:
                 st.markdown(f"Error: `{err.kind}` at step {err.step_index}")
         with col_diag:
@@ -135,10 +138,14 @@ def render_gallery(state: AgentState) -> None:
         media_tab1, media_tab2 = st.tabs(["Screenshots", "Execution Logs"])
 
         with media_tab1:
-            # Collect all screenshots from original run and repair attempts
+            # Collect all screenshots from original run and repair attempts.
+            # Use ORIGINAL_RESULT (falling back to result for older/mock states that
+            # don't set it) so the "Original Run" entry is really the first attempt,
+            # not the final result state.result gets overwritten to after healing.
             all_screenshots = []
-            if state.result and state.result.screenshots:
-                for s in state.result.screenshots:
+            original = state.original_result or state.result
+            if original and original.screenshots:
+                for s in original.screenshots:
                     all_screenshots.append((s, "Original Run"))
 
             for attempt in state.repair_attempts:

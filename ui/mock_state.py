@@ -196,6 +196,10 @@ state_healed = AgentState(
     flow=MOCK_FLOW,
     script=MOCK_REPAIRED_SCRIPT,
     result=MOCK_PASSED_RESULT,
+    # The original (failing) result, preserved separately from `result` — which is
+    # now the final PASS — so the gallery can still show the "before" screenshot
+    # and error alongside the healed "after" state.
+    original_result=MOCK_FAILED_RESULT,
     diagnosis=MOCK_DIAGNOSIS,
     repair_attempts=[
         RepairAttempt(
