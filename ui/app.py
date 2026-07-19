@@ -17,6 +17,10 @@ from ui.components.scoreboard import render_scoreboard
 from ui.components.selector_baseline import render_selector_baseline
 from ui.mock_state import state_diagnosed, state_failed, state_healed, state_pending
 
+TARGET_SITE_OPTIONS = ["Swag Labs (saucedemo.com)", "test_website (local, http://localhost:3000)"]
+DEFAULT_TEST_WEBSITE_URL = "http://localhost:3001/"
+TEST_WEBSITE_REPORT = Path(__file__).resolve().parents[1] / "harness" / "report_test_website.json"
+
 # Set page config for premium appearance
 st.set_page_config(
     page_title="Self-Healing Playwright Agent Dashboard",
@@ -33,6 +37,51 @@ def load_css() -> None:
         with open(css_path, "r", encoding="utf-8") as f:
             css = f.read()
         st.html(f"<style>{css}</style>")
+
+
+def normalize_base_url(url: str) -> str:
+    url = url.strip()
+    if not url:
+        return DEFAULT_TEST_WEBSITE_URL
+    return url if url.endswith("/") else f"{url}/"
+
+
+def mock_state_for_target(state: AgentState, target_site: str, test_website_url: str) -> AgentState:
+    """Return a demo state adjusted to the selected target site."""
+    demo_state = state.model_copy(deep=True)
+    if target_site == TARGET_SITE_OPTIONS[0]:
+        return demo_state
+
+    test_website_url = normalize_base_url(test_website_url)
+    if demo_state.flow:
+        steps = [
+            step.model_copy(update={"value": test_website_url})
+            if step.action == "goto"
+            else step
+            for step in demo_state.flow.steps
+        ]
+        demo_state.flow = demo_state.flow.model_copy(
+            update={
+                "id": "test_website_checkout",
+                "name": "test_website Checkout Flow",
+                "target_url": test_website_url,
+                "steps": steps,
+            }
+        )
+
+    scripts = [demo_state.script]
+    scripts.extend(attempt.new_script for attempt in demo_state.repair_attempts)
+    for script in scripts:
+        if script:
+            script.flow_id = "test_website_checkout"
+            script.code = script.code.replace("https://www.saucedemo.com/", test_website_url)
+
+    for result in [demo_state.result, demo_state.original_result]:
+        if result:
+            result.script_id = "test_website_checkout"
+            result.logs = result.logs.replace("https://www.saucedemo.com/", test_website_url)
+
+    return demo_state
 
 
 def main() -> None:
@@ -73,6 +122,12 @@ def main() -> None:
         max_value=5,
         value=3,
     )
+    target_site = st.sidebar.selectbox("Target site", TARGET_SITE_OPTIONS, index=0)
+    test_website_url = DEFAULT_TEST_WEBSITE_URL
+    if target_site == TARGET_SITE_OPTIONS[1]:
+        test_website_url = normalize_base_url(
+            st.sidebar.text_input("test_website URL", value=DEFAULT_TEST_WEBSITE_URL)
+        )
 
     # Active state placeholder
     current_state = state_pending
@@ -80,6 +135,11 @@ def main() -> None:
     if mode == "Mock State Player (Demo)":
         st.sidebar.markdown("---")
         st.sidebar.subheader("🎬 State Player Controls")
+        if target_site == TARGET_SITE_OPTIONS[0]:
+            st.sidebar.info("Plays canned demo states against the Swag Labs target.")
+        else:
+            st.sidebar.info(f"Plays canned demo states against `{test_website_url}`.")
+
         playback_step = st.sidebar.radio(
             "Select Execution Stage:",
             [
@@ -101,6 +161,8 @@ def main() -> None:
         elif "4." in playback_step:
             current_state = state_healed
 
+        current_state = mock_state_for_target(current_state, target_site, test_website_url)
+
         # Apply sidebar-configured options to the current state
         current_state.hitl = hitl
         current_state.max_attempts = max_attempts
@@ -110,13 +172,7 @@ def main() -> None:
         st.sidebar.markdown("---")
         st.sidebar.subheader("🚀 Live Runner Controls")
 
-        target_site = st.sidebar.selectbox(
-            "Target site",
-            ["Swag Labs (saucedemo.com)", "test_website (local, http://localhost:3000)"],
-            index=0,
-        )
-
-        if target_site == "Swag Labs (saucedemo.com)":
+        if target_site == TARGET_SITE_OPTIONS[0]:
             st.sidebar.info("Runs the compiled LangGraph pipeline live against Swag Labs.")
 
             # Scenarios. The two "break selector" runs are genuine script-vs-page breaks the
@@ -153,8 +209,7 @@ def main() -> None:
             st.sidebar.info(
                 "Runs the compiled LangGraph pipeline live against the local test_website "
                 "clone — genuine server-side data-test attribute renames via ?break=<mode>, "
-                "not synthetic string corruption. Make sure `npm run dev` is running on "
-                "http://localhost:3000."
+                f"not synthetic string corruption. Make sure it is running at `{test_website_url}`."
             )
 
             # Mirrors harness/test_website_cases.py's BREAK_MODES. All test_website cases
@@ -172,12 +227,16 @@ def main() -> None:
                 index=1,
             )
             _TEST_WEBSITE_TARGETS = {
-                "Baseline (no break) — should pass": "http://localhost:3000/",
-                "Break cart selector — should heal": "http://localhost:3000/?break=cart_selector",
-                "Break continue selector — should heal": "http://localhost:3000/?break=continue_selector",
-                "Break complete selector — should heal": "http://localhost:3000/?break=complete_selector",
+                "Baseline (no break) — should pass": test_website_url,
+                "Break cart selector — should heal": f"{test_website_url}?break=cart_selector",
+                "Break continue selector — should heal": (
+                    f"{test_website_url}?break=continue_selector"
+                ),
+                "Break complete selector — should heal": (
+                    f"{test_website_url}?break=complete_selector"
+                ),
                 "Checkout delay — passes without healing (control case)":
-                    "http://localhost:3000/?break=checkout_delay",
+                    f"{test_website_url}?break=checkout_delay",
             }
             base_configurable = {
                 "flow_id": "e2e_checkout",
@@ -220,16 +279,23 @@ def main() -> None:
     # Harness output, surfaced on the same page (plan_ui_extension.md)
     # ------------------------------------------------------------------
     st.divider()
-    render_selector_baseline()
+    if target_site == TARGET_SITE_OPTIONS[0]:
+        render_selector_baseline()
+    else:
+        with st.container(border=True):
+            st.markdown(
+                "<h4 style='margin-top:0;'>🧭 Selector Baseline (C1)</h4>",
+                unsafe_allow_html=True,
+            )
+            st.info("Selector baseline capture is only wired for the Saucedemo target.")
 
     st.divider()
-    saucedemo_tab, test_site_tab = st.tabs(["Saucedemo scoreboard", "test_site scoreboard"])
-    with saucedemo_tab:
+    if target_site == TARGET_SITE_OPTIONS[0]:
         render_scoreboard("Saucedemo scoreboard - auto-repair metrics")
-    with test_site_tab:
+    else:
         render_scoreboard(
             "test_site scoreboard - auto-repair metrics",
-            Path(__file__).resolve().parents[1] / "harness" / "report_test_website.json",
+            TEST_WEBSITE_REPORT,
         )
 
 

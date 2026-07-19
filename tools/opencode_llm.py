@@ -16,13 +16,16 @@ from types import SimpleNamespace
 class OpenCodeHeadlessModel:
     def __init__(self, role: str) -> None:
         self.role = role
+        self.bin = os.getenv("OPENCODE_BIN", "opencode")
         self.model = os.getenv("OPENCODE_MODEL", "github-copilot/gpt-5.5")
         self.timeout = int(os.getenv("OPENCODE_TIMEOUT", "180"))
 
     def invoke(self, messages) -> SimpleNamespace:
         prompt = _messages_to_prompt(messages)
+        started = time.strftime("%Y%m%d-%H%M%S")
+        prompt_path = _write_prompt_file(started, self.role, prompt)
         cmd = [
-            "opencode",
+            self.bin,
             "run",
             "--model",
             self.model,
@@ -30,21 +33,35 @@ class OpenCodeHeadlessModel:
             "json",
             "--title",
             f"pipeline-{self.role}",
-            prompt,
+            f"--file={prompt_path}",
+            "Follow the instructions in the attached prompt file exactly. "
+            "Respond with the requested output only.",
         ]
-        started = time.strftime("%Y%m%d-%H%M%S")
-        proc = subprocess.run(
-            cmd,
-            cwd=Path(__file__).resolve().parents[1],
-            text=True,
-            capture_output=True,
-            timeout=self.timeout,
-            check=False,
-        )
+        try:
+            proc = subprocess.run(
+                cmd,
+                cwd=Path(__file__).resolve().parents[1],
+                text=True,
+                capture_output=True,
+                timeout=self.timeout,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            stdout = exc.stdout or ""
+            stderr = exc.stderr or ""
+            _write_log(started, self.role, prompt, stdout, stderr, -1, cmd, prompt_path)
+            raise RuntimeError(
+                f"opencode timed out after {self.timeout}s for role={self.role}. "
+                f"Prompt was written to {prompt_path}. Increase OPENCODE_TIMEOUT, "
+                "set OPENCODE_BIN to a native WSL opencode binary if available, or use USE_MOCK=1."
+            ) from exc
         _write_log(started, self.role, prompt, proc.stdout, proc.stderr, proc.returncode)
         if proc.returncode != 0:
             raise RuntimeError(f"opencode exited {proc.returncode}: {proc.stderr.strip()}")
-        return SimpleNamespace(content=_extract_text(proc.stdout).strip())
+        content = _extract_text(proc.stdout).strip()
+        if not content:
+            raise RuntimeError("opencode returned no text content")
+        return SimpleNamespace(content=content)
 
 
 def opencode_model_for(role: str) -> OpenCodeHeadlessModel:
@@ -73,6 +90,14 @@ def _extract_text(stdout: str) -> str:
     return "".join(chunks)
 
 
+def _write_prompt_file(started: str, role: str, prompt: str) -> Path:
+    prompt_dir = Path("artifacts") / "opencode_headless" / "prompts"
+    prompt_dir.mkdir(parents=True, exist_ok=True)
+    path = prompt_dir / f"{started}-{role}.md"
+    path.write_text(prompt, encoding="utf-8")
+    return path
+
+
 def _write_log(
     started: str,
     role: str,
@@ -80,6 +105,8 @@ def _write_log(
     stdout: str,
     stderr: str,
     returncode: int,
+    cmd: list[str] | None = None,
+    prompt_path: Path | None = None,
 ) -> None:
     log_dir = Path("artifacts") / "opencode_headless"
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -88,6 +115,8 @@ def _write_log(
         json.dumps(
             {
                 "role": role,
+                "command": cmd,
+                "prompt_path": str(prompt_path) if prompt_path else None,
                 "model": os.getenv("OPENCODE_MODEL", "github-copilot/gpt-5.5"),
                 "returncode": returncode,
                 "prompt": prompt,
