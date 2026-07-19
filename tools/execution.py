@@ -54,6 +54,17 @@ def _classify_error(exc: Exception) -> tuple[str, int]:
     return "selector", 0
 
 
+def _safe_screenshot(page, path: Path) -> None:
+    """Capture the page even on failure so the UI has a real 'broken' image.
+
+    Best-effort: the page may be mid-failure, so never raise.
+    """
+    try:
+        page.screenshot(path=str(path))
+    except Exception:
+        pass
+
+
 def execution_node(state: AgentState) -> AgentState:
     assert state.script is not None
     assert state.flow is not None
@@ -77,6 +88,7 @@ def execution_node(state: AgentState) -> AgentState:
                 run_fn(page)
                 page.screenshot(path=str(screenshot_path))
             except PlaywrightError as exc:
+                _safe_screenshot(page, screenshot_path)  # capture the broken page
                 kind, step_index = _classify_error(exc)
                 state.result = RunResult(
                     script_id=state.script.flow_id,
@@ -89,6 +101,7 @@ def execution_node(state: AgentState) -> AgentState:
                 browser.close()
                 return state
             except Exception as exc:  # pragma: no cover - defensive fallback
+                _safe_screenshot(page, screenshot_path)  # capture the broken page
                 state.result = RunResult(
                     script_id=state.script.flow_id,
                     status="fail",
