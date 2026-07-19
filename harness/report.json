@@ -1,6 +1,6 @@
 [
   {
-    "case_id": "checkout_standard_user",
+    "case_id": "smoke_login__baseline",
     "user": "standard_user",
     "expected_kind": null,
     "initial_status": "pass",
@@ -10,20 +10,130 @@
     "verified_healed": null,
     "verify_reason": null,
     "final_error_kind": null,
-    "final_error_message": null
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\smoke_login__standard_user__attempt0.png"
+    ],
+    "trace": "artifacts\\engine_core\\smoke_login__standard_user__attempt0.zip"
+  },
+  {
+    "case_id": "smoke_add_to_cart__baseline",
+    "user": "standard_user",
+    "expected_kind": null,
+    "initial_status": "pass",
+    "final_status": "pass",
+    "repair_attempt_count": 0,
+    "healed": false,
+    "verified_healed": null,
+    "verify_reason": null,
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\smoke_add_to_cart__standard_user__attempt0.png"
+    ],
+    "trace": "artifacts\\engine_core\\smoke_add_to_cart__standard_user__attempt0.zip"
+  },
+  {
+    "case_id": "e2e_checkout__baseline",
+    "user": "standard_user",
+    "expected_kind": null,
+    "initial_status": "pass",
+    "final_status": "pass",
+    "repair_attempt_count": 0,
+    "healed": false,
+    "verified_healed": null,
+    "verify_reason": null,
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\e2e_checkout__standard_user__attempt0.png"
+    ],
+    "trace": "artifacts\\engine_core\\e2e_checkout__standard_user__attempt0.zip"
+  },
+  {
+    "case_id": "e2e_multi_item_checkout__baseline",
+    "user": "standard_user",
+    "expected_kind": null,
+    "initial_status": "pass",
+    "final_status": "pass",
+    "repair_attempt_count": 0,
+    "healed": false,
+    "verified_healed": null,
+    "verify_reason": null,
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\e2e_multi_item_checkout__standard_user__attempt0.png"
+    ],
+    "trace": "artifacts\\engine_core\\e2e_multi_item_checkout__standard_user__attempt0.zip"
+  },
+  {
+    "case_id": "e2e_sort_inventory__baseline",
+    "user": "standard_user",
+    "expected_kind": null,
+    "initial_status": "pass",
+    "final_status": "pass",
+    "repair_attempt_count": 0,
+    "healed": false,
+    "verified_healed": null,
+    "verify_reason": null,
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\e2e_sort_inventory__standard_user__attempt0.png"
+    ],
+    "trace": "artifacts\\engine_core\\e2e_sort_inventory__standard_user__attempt0.zip"
+  },
+  {
+    "case_id": "e2e_remove_from_cart__baseline",
+    "user": "standard_user",
+    "expected_kind": null,
+    "initial_status": "pass",
+    "final_status": "pass",
+    "repair_attempt_count": 0,
+    "healed": false,
+    "verified_healed": null,
+    "verify_reason": null,
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\e2e_remove_from_cart__standard_user__attempt0.png"
+    ],
+    "trace": "artifacts\\engine_core\\e2e_remove_from_cart__standard_user__attempt0.zip"
+  },
+  {
+    "case_id": "e2e_logout__baseline",
+    "user": "standard_user",
+    "expected_kind": null,
+    "initial_status": "pass",
+    "final_status": "pass",
+    "repair_attempt_count": 0,
+    "healed": false,
+    "verified_healed": null,
+    "verify_reason": null,
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\e2e_logout__standard_user__attempt0.png"
+    ],
+    "trace": "artifacts\\engine_core\\e2e_logout__standard_user__attempt0.zip"
   },
   {
     "case_id": "checkout_problem_user",
     "user": "problem_user",
     "expected_kind": "missing_element",
     "initial_status": "fail",
-    "final_status": "fail",
-    "repair_attempt_count": 3,
-    "healed": false,
-    "verified_healed": null,
-    "verify_reason": null,
-    "final_error_kind": "flow_change",
-    "final_error_message": "run() takes 0 positional arguments but 1 was given"
+    "final_status": "pass",
+    "repair_attempt_count": 1,
+    "healed": true,
+    "verified_healed": false,
+    "verify_reason": "repaired script no longer logs in as 'problem_user' \u2014 credential switch, not a genuine script heal",
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\e2e_checkout__problem_user__attempt1.png"
+    ],
+    "trace": "artifacts\\engine_core\\e2e_checkout__problem_user__attempt1.zip"
   },
   {
     "case_id": "checkout_performance_glitch_user",
@@ -36,32 +146,61 @@
     "verified_healed": null,
     "verify_reason": null,
     "final_error_kind": null,
-    "final_error_message": null
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\e2e_checkout__performance_glitch_user__attempt0.png"
+    ],
+    "trace": "artifacts\\engine_core\\e2e_checkout__performance_glitch_user__attempt0.zip"
   },
   {
     "case_id": "checkout_error_user",
     "user": "error_user",
     "expected_kind": "selector",
     "initial_status": "fail",
-    "final_status": "fail",
-    "repair_attempt_count": 3,
-    "healed": false,
-    "verified_healed": null,
-    "verify_reason": null,
-    "final_error_kind": "flow_change",
-    "final_error_message": "run() takes 0 positional arguments but 1 was given"
+    "final_status": "pass",
+    "repair_attempt_count": 1,
+    "healed": true,
+    "verified_healed": false,
+    "verify_reason": "repaired script no longer logs in as 'error_user' \u2014 credential switch, not a genuine script heal",
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\e2e_checkout__error_user__attempt1.png"
+    ],
+    "trace": "artifacts\\engine_core\\e2e_checkout__error_user__attempt1.zip"
   },
   {
     "case_id": "checkout_locked_out_user",
     "user": "locked_out_user",
     "expected_kind": "missing_element",
     "initial_status": "fail",
-    "final_status": "fail",
-    "repair_attempt_count": 3,
-    "healed": false,
-    "verified_healed": null,
-    "verify_reason": null,
-    "final_error_kind": "flow_change",
-    "final_error_message": "run() takes 0 positional arguments but 1 was given"
+    "final_status": "pass",
+    "repair_attempt_count": 1,
+    "healed": true,
+    "verified_healed": false,
+    "verify_reason": "repaired script no longer logs in as 'locked_out_user' \u2014 credential switch, not a genuine script heal",
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\e2e_checkout__locked_out_user__attempt1.png"
+    ],
+    "trace": "artifacts\\engine_core\\e2e_checkout__locked_out_user__attempt1.zip"
+  },
+  {
+    "case_id": "checkout_broken_selector",
+    "user": "standard_user",
+    "expected_kind": "selector",
+    "initial_status": "fail",
+    "final_status": "pass",
+    "repair_attempt_count": 1,
+    "healed": true,
+    "verified_healed": true,
+    "verify_reason": "independent re-run of the repaired script reproduced a full pass",
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts\\engine_core\\e2e_checkout__standard_user__attempt1.png"
+    ],
+    "trace": "artifacts\\engine_core\\e2e_checkout__standard_user__attempt1.zip"
   }
 ]

@@ -24,10 +24,6 @@ def diagnosis_node(state: AgentState) -> AgentState:
     )
 
     err = state.result.error
-
-    # ------------------------------------------------------------------
-    # Build the user-turn prompt from the available run context.
-    # ------------------------------------------------------------------
     screenshot_note = (
         f"Screenshots captured: {', '.join(state.result.screenshots)}"
         if state.result.screenshots
@@ -42,9 +38,6 @@ def diagnosis_node(state: AgentState) -> AgentState:
         "Diagnose this failure and respond with JSON only."
     )
 
-    # ------------------------------------------------------------------
-    # Call the model (real or mock, depending on USE_MOCK env var).
-    # ------------------------------------------------------------------
     from config import model_for  # imported here to avoid circular imports at module load
 
     model = model_for("diagnosis")
