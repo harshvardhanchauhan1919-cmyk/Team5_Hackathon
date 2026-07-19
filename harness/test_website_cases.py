@@ -30,9 +30,15 @@ USER = "standard_user"
 BREAK_MODES: dict[str, tuple[str | None, str]] = {
     "cart_selector": ("missing_element", 'data-test="shopping-cart-link" -> "cart-link-v2"'),
     "continue_selector": ("missing_element", 'data-test="continue" -> "continue-checkout"'),
-    "complete_selector": ("missing_element", 'data-test="complete-header" -> "order-complete-title"'),
-    "checkout_delay": (None, "3000ms navigation delay, information -> overview (may not fail at all "
-                              "under Playwright's default 30s auto-wait; kept as a control case)"),
+    "complete_selector": (
+        "missing_element",
+        'data-test="complete-header" -> "order-complete-title"',
+    ),
+    "checkout_delay": (
+        None,
+        "3000ms navigation delay, information -> overview (may not fail at all "
+        "under Playwright's default 30s auto-wait; kept as a control case)",
+    ),
 }
 
 
