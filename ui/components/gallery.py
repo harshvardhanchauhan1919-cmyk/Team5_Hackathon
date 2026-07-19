@@ -1,13 +1,78 @@
 """Artifact Gallery Component (G2) — Renders screenshots, video, logs, and diagnoses."""
 from __future__ import annotations
 
+import os
+
 import streamlit as st
 
 from schemas import AgentState
 
 
+def render_heal_summary(state: AgentState) -> None:
+    """Narrate what broke, how it was diagnosed, and how it healed — the demo story."""
+    broke = state.result is not None and state.result.status == "fail"
+    if not state.repair_attempts and not broke:
+        return  # happy path — nothing to narrate
+
+    st.subheader("🔁 Self-Healing Summary")
+    with st.container(border=True):
+        col_broke, col_diag, col_heal = st.columns(3)
+        with col_broke:
+            st.markdown("**❌ What broke**")
+            corrupted = next(
+                (s.selector for s in (state.flow.steps if state.flow else [])
+                 if "-BROKEN" in s.selector),
+                None,
+            )
+            if corrupted:
+                st.markdown(f"Corrupted selector:\n\n`{corrupted}`")
+            err = state.result.error if state.result else None
+            if err:
+                st.markdown(f"Error: `{err.kind}` at step {err.step_index}")
+        with col_diag:
+            st.markdown("**🩺 Diagnosis**")
+            if state.diagnosis:
+                st.markdown(state.diagnosis.root_cause)
+                st.caption(f"confidence {state.diagnosis.confidence * 100:.0f}%")
+            else:
+                st.markdown("_pending_")
+        with col_heal:
+            st.markdown("**✅ How it healed**")
+            healed = (
+                state.result is not None
+                and state.result.status == "pass"
+                and len(state.repair_attempts) > 0
+            )
+            if healed:
+                st.markdown(
+                    "Rewrote the script and re-ran → **passed** "
+                    f"after {len(state.repair_attempts)} attempt(s)."
+                )
+            elif state.repair_attempts:
+                st.markdown(
+                    f"Attempted {len(state.repair_attempts)} repair(s) — "
+                    "not verified as a genuine heal."
+                )
+            else:
+                st.markdown("_no repair yet_")
+
+    # Before / after scripts, side by side (the broken script is the flow re-rendered).
+    if state.repair_attempts and state.flow and state.script:
+        from agents.script_gen import render_script
+
+        st.markdown("**Script: before (broken) → after (AI-repaired)**")
+        before_col, after_col = st.columns(2)
+        with before_col:
+            st.caption("Before — the generated script that failed")
+            st.code(render_script(state.flow), language="python")
+        with after_col:
+            st.caption("After — the repaired script that passed")
+            st.code(state.script.code, language="python")
+
+
 def render_gallery(state: AgentState) -> None:
     """Render the error diagnosis details, before/after code diff, screenshots, and logs."""
+    render_heal_summary(state)
     st.subheader("🖼️ Artifact Gallery & Run Details")
 
     # 1. Error & Diagnosis Section (if failure occurred)
@@ -87,12 +152,16 @@ def render_gallery(state: AgentState) -> None:
                     col_idx = idx % len(cols)
                     with cols[col_idx]:
                         st.write(f"**{label}**")
-                        # Show placeholder or path
-                        st.image(
-                            "https://placehold.co/600x400/0f172a/e2e8f0/png?text="
-                            + img_path.replace(" ", "+"),
-                            caption=img_path,
-                        )
+                        if os.path.exists(img_path):
+                            # Real browser capture from the Execution node.
+                            st.image(img_path, caption=img_path)
+                        else:
+                            # Fallback when the file isn't on disk (e.g. mock states).
+                            st.image(
+                                "https://placehold.co/600x400/0f172a/e2e8f0/png?text="
+                                + os.path.basename(img_path).replace(" ", "+"),
+                                caption=img_path,
+                            )
             else:
                 st.info("No screenshots available.")
 

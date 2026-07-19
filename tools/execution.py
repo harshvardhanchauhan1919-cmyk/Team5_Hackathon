@@ -82,6 +82,10 @@ def _dump_live_tokens(page) -> str:
 
 
 def _safe_screenshot(page, path: Path) -> None:
+    """Capture the page even on failure so the UI has a real 'broken' image.
+
+    Best-effort: the page may be mid-failure, so never raise.
+    """
     try:
         page.screenshot(path=str(path))
     except Exception:  # pragma: no cover - page may already be in a bad state
@@ -112,7 +116,7 @@ def execution_node(state: AgentState) -> AgentState:
                 page.screenshot(path=str(screenshot_path))
             except PlaywrightError as exc:
                 kind, step_index = _classify_error(exc)
-                _safe_screenshot(page, screenshot_path)
+                _safe_screenshot(page, screenshot_path)  # capture the broken page
                 state.result = RunResult(
                     script_id=state.script.flow_id,
                     status="fail",
@@ -124,7 +128,7 @@ def execution_node(state: AgentState) -> AgentState:
                 browser.close()
                 return state
             except Exception as exc:  # pragma: no cover - defensive fallback
-                _safe_screenshot(page, screenshot_path)
+                _safe_screenshot(page, screenshot_path)  # capture the broken page
                 state.result = RunResult(
                     script_id=state.script.flow_id,
                     status="fail",

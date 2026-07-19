@@ -106,26 +106,51 @@ def main() -> None:
         # Live Graph Execution
         st.sidebar.markdown("---")
         st.sidebar.subheader("🚀 Live Runner Controls")
-        st.sidebar.info("Runs the compiled LangGraph pipeline using current settings and config.")
+        st.sidebar.info("Runs the compiled LangGraph pipeline live against Swag Labs.")
+
+        # Scenarios. The two "break selector" runs are genuine script-vs-page breaks the
+        # AI fixes (real heals). The locked-out account is an honest non-heal that F3
+        # correctly rejects — a good contrast to show the verification actually works.
+        scenario = st.sidebar.selectbox(
+            "Scenario",
+            [
+                "Healthy run (standard_user) — should pass",
+                "Break add-to-cart selector — should heal",
+                "Break checkout selector — should heal",
+                "Locked-out account — correctly NOT healed",
+            ],
+            index=1,
+        )
+        _CONFIGS = {
+            "Healthy run (standard_user) — should pass": {"user": "standard_user"},
+            "Break add-to-cart selector — should heal": {
+                "user": "standard_user",
+                "break_selector": '[data-test="add-to-cart-sauce-labs-backpack"]',
+            },
+            "Break checkout selector — should heal": {
+                "user": "standard_user",
+                "break_selector": '[data-test="checkout"]',
+            },
+            "Locked-out account — correctly NOT healed": {"user": "locked_out_user"},
+        }
 
         if st.sidebar.button("Run Live Pipeline"):
-            # When clicked, run the live graph using state_pending as default input
             from graph.build import build_graph
 
             st.sidebar.warning("Executing Graph...")
             try:
                 app = build_graph()
-                initial_state = AgentState(
-                    flow=state_pending.flow,
-                    script=state_pending.script,
-                    max_attempts=max_attempts,
-                    hitl=hitl,
+                configurable = {
+                    "flow_id": "e2e_checkout",
+                    "target_url": "https://www.saucedemo.com/",
+                    **_CONFIGS[scenario],
+                }
+                # Discovery reads flow/user/break from config; no need to pre-seed state.
+                final_state_dict = app.invoke(
+                    AgentState(max_attempts=max_attempts, hitl=hitl),
+                    config={"configurable": configurable},
                 )
-                # Invoke the LangGraph graph
-                final_state_dict = app.invoke(initial_state)
-
                 if isinstance(final_state_dict, dict):
-                    # Some LangGraph configurations return a dict, so convert it.
                     current_state = AgentState(**final_state_dict)
                 else:
                     current_state = final_state_dict

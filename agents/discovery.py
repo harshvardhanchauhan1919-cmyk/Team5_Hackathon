@@ -192,15 +192,31 @@ def _inject(flow: Flow, user: str, url: str) -> Flow:
 
 
 def _corrupt_selector(flow: Flow, selector: str) -> Flow:
-    """Deliberately break one selector so a genuine self-heal case can be demoed.
+    """Break one selector so a genuine self-heal case can be demoed.
 
-    Turns a real script-vs-page break (not a user break): the target step's selector
-    is mangled so it matches nothing on the page. Execution then fails with a
-    selector/missing_element error the LLM can actually repair.
+    Prefer the exact selector; if it isn't in the flow (e.g. the catalog changed),
+    fall back to the first add-to-cart click, then any data-test click — so the
+    "break a selector" scenario can never silently no-op and pass the happy path.
     """
+    have = {s.selector for s in flow.steps}
+    target = selector if selector in have else None
+    if target is None:
+        target = next(
+            (s.selector for s in flow.steps
+             if s.action == "click" and "add-to-cart" in s.selector),
+            None,
+        )
+    if target is None:
+        target = next(
+            (s.selector for s in flow.steps
+             if s.action == "click" and s.selector.startswith('[data-test')),
+            None,
+        )
+    if target is None:
+        return flow  # nothing breakable in this flow
     steps = [
         s.model_copy(update={"selector": s.selector.replace('"]', '-BROKEN"]')})
-        if s.selector == selector else s
+        if s.selector == target else s
         for s in flow.steps
     ]
     return flow.model_copy(update={"steps": steps})

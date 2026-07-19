@@ -1,15 +1,12 @@
 **Context**
 - this is part of the total project (see full github)
 - consider readme.md
+- consider how the other EPIC E - User Stories have been implemented already
+
 
 **Coding constraints**
 - all code to be placed in the /harness directory
 - all code is in python
 
-**EPIC F**
-- GOAL: Harness, scoreboard & metrics *(the proof)*
-- USER STORIES:
--- F1: harness runner over `{flow × break}` cases. 
--- F2: the metrics table showing ≥50% auto-repair and which classes healed — this is the scoreboard that goes in the video and README.
--- F3: "healed is truly healed" verification (a repair that passes for the wrong reason is a demo-killer) + Regression Monitor.
-
+# Epic E — Hero loop *(the whole judged story)*
+- E4: the **flow-change beat** — Swag Labs' buggy users don't reorder steps, so one tiny local fixture or Playwright route-intercept covers that one failure class.
