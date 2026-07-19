@@ -33,7 +33,8 @@ missing_element
   - Wrap the failing interaction in an is_visible guard:
       if page.is_visible("<selector>"):
           page.click("<selector>")
-  - Or switch to the correct user / permission level as noted in suggested_fix.
+  - If the element is genuinely absent for this user/role and no selector or guard
+    can reach it, the flow cannot be repaired — return the script UNCHANGED.
 
 flow_change
   - Re-order, add, or remove steps to match the new application flow described in
@@ -51,21 +52,20 @@ flow_change
   expect(page).to_have_url(pattern)
 
 ## Rules
+- NEVER change the login username or password, or switch to a different user/account.
+  The failure must be fixed by repairing selectors, waits, or step order — not by
+  swapping credentials. If the failure is a locked-out / unauthorized / access issue
+  that no script edit can fix, return the script UNCHANGED (it is correctly reported
+  as not-healed).
+- Define exactly ONE function with the signature `def run(page):` and use the `page`
+  that is passed in. Do NOT create your own browser or call sync_playwright(), and do
+  NOT add an `if __name__ == "__main__"` block — the Execution node drives the page.
 - Do NOT import anything that is not in the standard library or playwright.
-- Always end the script with:  if __name__ == "__main__":  run()
 - Temperature is 0; be deterministic and minimal — change only what is broken.
 - If a previous attempt exists, do NOT repeat the same change that failed before.
 
-## Script template
-from playwright.sync_api import sync_playwright
-
-def run():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        # ... steps ...
-        browser.close()
-
-if __name__ == "__main__":
-    run()
+## Script template — match this signature exactly
+def run(page):
+    page.goto("https://www.saucedemo.com/", timeout=60000)
+    # ... the corrected steps, using the provided `page` ...
 """

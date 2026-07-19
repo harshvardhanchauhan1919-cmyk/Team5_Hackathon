@@ -23,12 +23,11 @@ from pathlib import Path
 
 from langchain_core.runnables import RunnableConfig
 
+from credentials import DEFAULT_USER, PASSWORD
 from schemas import AgentState, Flow, Step
 
 DEFAULT_URL = "https://www.saucedemo.com/"
-DEFAULT_USER = "standard_user"
 DEFAULT_FLOW = "e2e_checkout"
-_PASSWORD = "secret_sauce"
 CATALOG_PATH = Path(__file__).parent.parent / "fixtures" / "flow_catalog.json"
 
 
@@ -47,7 +46,7 @@ def crawl(page) -> set[str]:
     page.goto(DEFAULT_URL, timeout=60_000)
     found |= tokens_here()                                   # login page
     page.fill('[data-test="username"]', DEFAULT_USER)
-    page.fill('[data-test="password"]', _PASSWORD)
+    page.fill('[data-test="password"]', PASSWORD)
     page.click('[data-test="login-button"]')
     found |= tokens_here()                                   # inventory
     page.click('[data-test="shopping-cart-link"]')
@@ -64,7 +63,7 @@ def _login(user: str, url: str) -> list[Step]:
     return [
         _step("goto", value=url, description="open the site"),
         _step("fill", '[data-test="username"]', user, "username"),
-        _step("fill", '[data-test="password"]', _PASSWORD, "password"),
+        _step("fill", '[data-test="password"]', PASSWORD, "password"),
         _step("click", '[data-test="login-button"]', description="log in"),
     ]
 
@@ -192,6 +191,21 @@ def _inject(flow: Flow, user: str, url: str) -> Flow:
     return flow.model_copy(update={"steps": steps, "target_url": url})
 
 
+def _corrupt_selector(flow: Flow, selector: str) -> Flow:
+    """Deliberately break one selector so a genuine self-heal case can be demoed.
+
+    Turns a real script-vs-page break (not a user break): the target step's selector
+    is mangled so it matches nothing on the page. Execution then fails with a
+    selector/missing_element error the LLM can actually repair.
+    """
+    steps = [
+        s.model_copy(update={"selector": s.selector.replace('"]', '-BROKEN"]')})
+        if s.selector == selector else s
+        for s in flow.steps
+    ]
+    return flow.model_copy(update={"steps": steps})
+
+
 def discover_flow(flow_id: str = DEFAULT_FLOW, user: str = DEFAULT_USER,
                   target_url: str = DEFAULT_URL) -> Flow:
     """Select one flow from the catalog by id and point it at the given user + URL."""
@@ -210,6 +224,9 @@ def discovery_node(state: AgentState, config: RunnableConfig) -> dict:
         user=params.get("user", DEFAULT_USER),
         target_url=params.get("target_url", DEFAULT_URL),
     )
+    break_selector = params.get("break_selector")
+    if break_selector:
+        flow = _corrupt_selector(flow, break_selector)
     return {"flow": flow}
 
 

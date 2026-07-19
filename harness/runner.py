@@ -55,6 +55,8 @@ def run_case(app, case: Case, headless: bool = True) -> dict:
         "verify_reason": verify_reason,
         "final_error_kind": result.error.kind if result.error else None,
         "final_error_message": result.error.message if result.error else None,
+        "screenshots": result.screenshots,  # evidence: artifacts/engine_core/*.png
+        "trace": result.trace,              # evidence: open with `playwright show-trace`
     }
 
 
@@ -65,11 +67,22 @@ def run_all(headless: bool = True) -> list[dict]:
         print(f"[runner] running {case.id} ...")
         r = run_case(app, case, headless=headless)
         results.append(r)
-        print(
-            f"[runner] {case.id}: initial={r['initial_status']} final={r['final_status']} "
-            f"healed={r['healed']} verified={r['verified_healed']}"
-        )
+        print(f"[runner] {case.id}: initial={r['initial_status']} -> {_verdict(r)}")
     return results
+
+
+def _verdict(r: dict) -> str:
+    """One unambiguous outcome per case. 'healed' alone is the naive pipeline flag;
+    only a verified heal is a genuine win. A healed-but-unverified case is a FALSE
+    HEAL that F3 caught (e.g. the model switched credentials instead of fixing the
+    script)."""
+    if r["initial_status"] == "pass":
+        return "BASELINE PASS (nothing to heal)"
+    if r["healed"] and r["verified_healed"]:
+        return "HEALED (verified by F3)"
+    if r["healed"] and not r["verified_healed"]:
+        return f"FALSE HEAL - rejected by F3: {r['verify_reason']}"
+    return "NOT HEALED"
 
 
 if __name__ == "__main__":
