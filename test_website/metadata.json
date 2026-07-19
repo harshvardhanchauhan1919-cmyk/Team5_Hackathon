@@ -1,0 +1,6 @@
+{
+  "name": "Sauce Demo Clone",
+  "description": "A high-fidelity clone of saucedemo.com (Swag Labs) for automated testing, training, and performance analysis. Includes full user simulations (standard, locked-out, problem, performance glitch, visual, and error users), complete inventory flow, cart management, checkout forms, and real-time order summaries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
