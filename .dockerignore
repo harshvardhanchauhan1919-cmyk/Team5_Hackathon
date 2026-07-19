@@ -1,0 +1,11 @@
+.git/
+.env
+.venv/
+hello_world/.venv/
+__pycache__/
+*.pyc
+artifacts/
+.ruff_cache/
+.pytest_cache/
+harness/report.json
+harness/report.md
