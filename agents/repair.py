@@ -26,10 +26,6 @@ def repair_node(state: AgentState) -> AgentState:
 
     attempt_no = len(state.repair_attempts) + 1
     diag = state.diagnosis
-
-    # ------------------------------------------------------------------
-    # Build the user-turn prompt.
-    # ------------------------------------------------------------------
     history_section = _format_history(state.repair_attempts)
 
     user_prompt = (
@@ -45,9 +41,6 @@ def repair_node(state: AgentState) -> AgentState:
         f"Return ONLY the corrected Python script — no explanations."
     )
 
-    # ------------------------------------------------------------------
-    # Call the model.
-    # ------------------------------------------------------------------
     from config import model_for  # deferred to avoid circular import
 
     model = model_for("repair")
@@ -68,9 +61,6 @@ def repair_node(state: AgentState) -> AgentState:
         logger.warning("Repair model error (%s) — falling back to original script.", exc)
         new_code = state.script.code + f"\n# repair attempt {attempt_no} failed: {exc}"
 
-    # ------------------------------------------------------------------
-    # Update state.
-    # ------------------------------------------------------------------
     new_script = Script(flow_id=state.script.flow_id, code=new_code)
     state.repair_attempts.append(
         RepairAttempt(
@@ -83,10 +73,6 @@ def repair_node(state: AgentState) -> AgentState:
     state.script = new_script
     return state
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _clean_script(raw: str) -> str:
     """Strip markdown fences and leading/trailing whitespace from LLM output."""

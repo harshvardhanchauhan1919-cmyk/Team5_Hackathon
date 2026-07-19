@@ -20,8 +20,6 @@ from typing import Optional
 
 from playwright.sync_api import sync_playwright
 
-from harness.selectors import CHECKOUT_FLOW
-from harness.step_executor import run_flow
 from schemas import AgentState, RunResult
 
 logger = logging.getLogger(__name__)
@@ -66,38 +64,62 @@ class VerifyResult:
 
 def verify_healed_live(state: AgentState, headless: bool = True) -> VerifyResult:
     """Given a final AgentState the pipeline reported as "healed", double-check it
-    with a fresh, independent Playwright run rather than trusting the cached RunResult.
+    by independently re-running the REPAIRED SCRIPT (state.script.code) in a fresh
+    browser — not the original flow steps.
+
+    Why the repaired script and not state.flow.steps: Repair rewrites state.script;
+    verifying state.flow.steps would re-test the *original* (still-broken) flow and
+    never confirm the actual fix. We verify what was repaired.
 
     Checks, in order:
-    1. At least one repair attempt actually happened — a "pass" with zero
-       repair attempts was never broken, so it can't have been healed.
+    1. At least one repair attempt happened — a "pass" with zero repairs was never
+       broken, so it can't have been healed.
     2. The reported result really is "pass".
-    3. A completely fresh re-run (new browser context, not the cached
-       RunResult) still passes — catches a one-off flake reported as healed.
-    4. That fresh re-run actually completes as many steps as the C1 baseline —
-       catches a "pass" that quietly short-circuited instead of truly fixing
-       the flow.
+    3. There is a repaired script that defines a callable run(page).
+    4. A completely fresh re-run of that repaired script still passes — catches a
+       one-off flake or a cached "pass".
     """
     if not state.repair_attempts:
         return VerifyResult(False, "no repair attempts recorded — nothing was actually healed")
     if state.result is None or state.result.status != "pass":
         reported = state.result.status if state.result else None
         return VerifyResult(False, f"reported status is {reported!r}, not pass")
-    if state.flow is None:
-        return VerifyResult(False, "no flow on final state to re-verify against")
+    if state.script is None:
+        return VerifyResult(False, "no repaired script on final state to re-verify")
+
+    # Guard against the "credential switch" cheat. A genuine heal fixes the SCRIPT for
+    # the SAME login user. If the repaired script no longer logs in as the original
+    # user (e.g. the model swapped a locked-out account for standard_user just to make
+    # it pass), that's sidestepping the failure, not healing it.
+    original_user = next(
+        (s.value for s in (state.flow.steps if state.flow else [])
+         if s.selector == '[data-test="username"]' and s.value),
+        None,
+    )
+    if original_user and original_user not in state.script.code:
+        return VerifyResult(
+            False,
+            f"repaired script no longer logs in as {original_user!r} — "
+            "credential switch, not a genuine script heal",
+        )
+
+    namespace: dict = {}
+    try:
+        exec(compile(state.script.code, "<verify>", "exec"), namespace)
+    except Exception as exc:  # noqa: BLE001
+        return VerifyResult(False, f"repaired script failed to compile: {exc}")
+    run_fn = namespace.get("run")
+    if not callable(run_fn):
+        return VerifyResult(False, "repaired script defines no callable run(page)")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless)
         page = browser.new_page()
-        outcome = run_flow(page, state.flow.steps, context={})
+        try:
+            run_fn(page)
+        except Exception as exc:  # noqa: BLE001
+            browser.close()
+            return VerifyResult(False, f"independent re-run of repaired script failed: {exc}")
         browser.close()
 
-    if outcome.status != "pass":
-        return VerifyResult(False, f"independent re-run failed: {outcome.error}")
-    if len(outcome.steps) < len(CHECKOUT_FLOW.steps):
-        return VerifyResult(
-            False,
-            f"independent re-run only completed {len(outcome.steps)}/"
-            f"{len(CHECKOUT_FLOW.steps)} baseline steps — looks short-circuited",
-        )
-    return VerifyResult(True, "independent re-run reproduced a full pass")
+    return VerifyResult(True, "independent re-run of the repaired script reproduced a full pass")

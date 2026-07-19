@@ -12,18 +12,10 @@ from pathlib import Path
 import yaml
 from playwright.sync_api import sync_playwright
 
+from credentials import PASSWORD, USERS
 from harness.selectors import CHECKOUT_FLOW
 from harness.step_executor import run_flow
 from schemas import ErrorKind
-
-USERS = [
-    "standard_user",              # control - expected to pass end to end
-    "problem_user",
-    "performance_glitch_user",
-    "error_user",
-    "locked_out_user",
-]
-PASSWORD = "secret_sauce"
 
 OUT_YAML = Path(__file__).parent / "break_matrix.yaml"
 EVIDENCE_DIR = Path(__file__).parent / "fixtures" / "break_matrix"
