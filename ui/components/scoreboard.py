@@ -1,39 +1,47 @@
-"""Scoreboard (F2) section — renders harness.metrics' output on the dashboard.
-
-Mirrors harness/report.md exactly (same conclusion line and both tables) so the webpage
-shows the latest auto-repair numbers without needing to open the generated file.
-"""
+"""Scoreboard (F2) section for harness result files."""
 from __future__ import annotations
+
+import json
+from pathlib import Path
 
 import streamlit as st
 
-from harness.metrics import AUTO_REPAIR_TARGET, load_results, summarize
+from harness.metrics import AUTO_REPAIR_TARGET, REPORT_JSON, summarize
 from ui.components.tables import badge, cell, render_table
 
-_CACHE_KEY = "scoreboard_cache"
+_CACHE_KEY_PREFIX = "scoreboard_cache"
 
 
-def render_scoreboard() -> None:
-    """Reads harness/report.json (written by harness.runner) and shows the same
-    conclusion line + tables that harness.metrics writes to harness/report.md."""
+def _load_results(report_json: Path) -> list[dict]:
+    if not report_json.exists():
+        raise FileNotFoundError(f"no {report_json} - run the matching harness first")
+    return json.loads(report_json.read_text(encoding="utf-8"))
+
+
+def render_scoreboard(
+    title: str = "Scoreboard - auto-repair metrics",
+    report_json: Path = REPORT_JSON,
+) -> None:
+    """Render F2 metrics for any harness report with the standard result schema."""
+    cache_key = f"{_CACHE_KEY_PREFIX}:{report_json}"
     with st.container(border=True):
         st.markdown(
-            "<h4 style='margin-top:0;'>📊 Scoreboard — auto-repair metrics</h4>",
+            f"<h4 style='margin-top:0;'>📊 {title}</h4>",
             unsafe_allow_html=True,
         )
 
-        if st.button("Refresh Scoreboard (F2)"):
-            st.session_state.pop(_CACHE_KEY, None)
+        if st.button("Refresh Scoreboard (F2)", key=f"refresh:{report_json}"):
+            st.session_state.pop(cache_key, None)
 
-        if _CACHE_KEY not in st.session_state:
+        if cache_key not in st.session_state:
             try:
-                results = load_results()
+                results = _load_results(report_json)
             except FileNotFoundError as exc:
                 st.info(str(exc))
                 return
-            st.session_state[_CACHE_KEY] = (results, summarize(results))
+            st.session_state[cache_key] = (results, summarize(results))
 
-        results, summary = st.session_state[_CACHE_KEY]
+        results, summary = st.session_state[cache_key]
 
         suspect_note = (
             f", {summary['suspect']} more flagged suspect by F3" if summary["suspect"] else ""

@@ -92,6 +92,31 @@ def _safe_screenshot(page, path: Path) -> None:
         pass
 
 
+def _finish(state: AgentState, result: RunResult) -> AgentState:
+    """Attach `result` as the run's current result, and — if this execution is the
+    re-run that follows a repair attempt — backfill that attempt's own `result` too.
+
+    `repair_node` appends a `RepairAttempt` with `result=None`, documented there as
+    "filled in by the execution node after re-run", but nothing previously did that.
+    Left unfilled, `state.repair_attempts[-1].result` stayed None forever, which (a)
+    hid every repair attempt's screenshot from the gallery — only the single latest
+    `state.result` screenshot ever rendered, so the UI never showed the before/after
+    healing evidence — and (b) kept the pipeline view's Repair node stuck on "ACTIVE"
+    even after a genuine pass, since that view keys off `last_attempt.result`.
+
+    Also stashes the very first result as `state.original_result` (set once, never
+    overwritten). Without this, once healing succeeds `state.result` is replaced by
+    the final PASS and the original failure's screenshot/error is gone — the UI can
+    no longer show "what broke" after it's fixed.
+    """
+    if state.original_result is None:
+        state.original_result = result
+    state.result = result
+    if state.repair_attempts and state.repair_attempts[-1].result is None:
+        state.repair_attempts[-1].result = result
+    return state
+
+
 def execution_node(state: AgentState) -> AgentState:
     assert state.script is not None
     assert state.flow is not None
@@ -117,26 +142,26 @@ def execution_node(state: AgentState) -> AgentState:
             except PlaywrightError as exc:
                 kind, step_index = _classify_error(exc)
                 _safe_screenshot(page, screenshot_path)  # capture the broken page
-                state.result = RunResult(
+                _finish(state, RunResult(
                     script_id=state.script.flow_id,
                     status="fail",
                     logs=f"{exc}\n\n{_dump_live_tokens(page)}",
                     screenshots=[str(screenshot_path)],
                     trace=str(trace_path),
                     error=Error(kind=kind, message=str(exc), step_index=step_index),
-                )
+                ))
                 browser.close()
                 return state
             except Exception as exc:  # pragma: no cover - defensive fallback
                 _safe_screenshot(page, screenshot_path)  # capture the broken page
-                state.result = RunResult(
+                _finish(state, RunResult(
                     script_id=state.script.flow_id,
                     status="fail",
                     logs=f"{exc}\n\n{_dump_live_tokens(page)}",
                     screenshots=[str(screenshot_path)],
                     trace=str(trace_path),
                     error=Error(kind="flow_change", message=str(exc), step_index=-1),
-                )
+                ))
                 browser.close()
                 return state
             finally:
@@ -145,21 +170,21 @@ def execution_node(state: AgentState) -> AgentState:
                 except Exception:
                     pass
 
-        state.result = RunResult(
+        _finish(state, RunResult(
             script_id=state.script.flow_id,
             status="pass",
             logs="execution completed",
             screenshots=[str(screenshot_path)],
             trace=str(trace_path),
-        )
+        ))
         return state
     except Exception as exc:  # pragma: no cover - defensive fallback
         LOGGER.exception("engine_core execution failed")
-        state.result = RunResult(
+        _finish(state, RunResult(
             script_id=state.script.flow_id,
             status="fail",
             logs=str(exc),
             screenshots=[str(screenshot_path)] if 'screenshot_path' in locals() else [],
             error=Error(kind="timeout", message=str(exc), step_index=-1),
-        )
+        ))
         return state
