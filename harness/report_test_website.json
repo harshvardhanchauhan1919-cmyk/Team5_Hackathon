@@ -1,0 +1,92 @@
+[
+  {
+    "case_id": "test_website__baseline",
+    "target_url": "http://localhost:3000/",
+    "user": "standard_user",
+    "expected_kind": null,
+    "initial_status": "pass",
+    "final_status": "pass",
+    "repair_attempt_count": 0,
+    "healed": false,
+    "verified_healed": null,
+    "verify_reason": null,
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts/engine_core/e2e_checkout__standard_user__attempt0.png"
+    ],
+    "trace": "artifacts/engine_core/e2e_checkout__standard_user__attempt0.zip"
+  },
+  {
+    "case_id": "test_website__cart_selector",
+    "target_url": "http://localhost:3000/?break=cart_selector",
+    "user": "standard_user",
+    "expected_kind": "missing_element",
+    "initial_status": "fail",
+    "final_status": "pass",
+    "repair_attempt_count": 1,
+    "healed": true,
+    "verified_healed": true,
+    "verify_reason": "independent re-run of the repaired script reproduced a full pass",
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts/engine_core/e2e_checkout__standard_user__cart_selector__attempt1.png"
+    ],
+    "trace": "artifacts/engine_core/e2e_checkout__standard_user__cart_selector__attempt1.zip"
+  },
+  {
+    "case_id": "test_website__continue_selector",
+    "target_url": "http://localhost:3000/?break=continue_selector",
+    "user": "standard_user",
+    "expected_kind": "missing_element",
+    "initial_status": "fail",
+    "final_status": "pass",
+    "repair_attempt_count": 1,
+    "healed": true,
+    "verified_healed": true,
+    "verify_reason": "independent re-run of the repaired script reproduced a full pass",
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts/engine_core/e2e_checkout__standard_user__continue_selector__attempt1.png"
+    ],
+    "trace": "artifacts/engine_core/e2e_checkout__standard_user__continue_selector__attempt1.zip"
+  },
+  {
+    "case_id": "test_website__complete_selector",
+    "target_url": "http://localhost:3000/?break=complete_selector",
+    "user": "standard_user",
+    "expected_kind": "missing_element",
+    "initial_status": "fail",
+    "final_status": "pass",
+    "repair_attempt_count": 1,
+    "healed": true,
+    "verified_healed": true,
+    "verify_reason": "independent re-run of the repaired script reproduced a full pass",
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts/engine_core/e2e_checkout__standard_user__complete_selector__attempt1.png"
+    ],
+    "trace": "artifacts/engine_core/e2e_checkout__standard_user__complete_selector__attempt1.zip"
+  },
+  {
+    "case_id": "test_website__checkout_delay",
+    "target_url": "http://localhost:3000/?break=checkout_delay",
+    "user": "standard_user",
+    "expected_kind": null,
+    "initial_status": "pass",
+    "final_status": "pass",
+    "repair_attempt_count": 0,
+    "healed": false,
+    "verified_healed": null,
+    "verify_reason": null,
+    "final_error_kind": null,
+    "final_error_message": null,
+    "screenshots": [
+      "artifacts/engine_core/e2e_checkout__standard_user__checkout_delay__attempt0.png"
+    ],
+    "trace": "artifacts/engine_core/e2e_checkout__standard_user__checkout_delay__attempt0.zip"
+  }
+]

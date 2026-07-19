@@ -5,6 +5,7 @@ without needing to execute the real LangGraph graph or live LLMs.
 """
 from __future__ import annotations
 
+from credentials import DEFAULT_USER, PASSWORD
 from schemas import (
     AgentState,
     Diagnosis,
@@ -26,13 +27,13 @@ MOCK_STEPS = [
     Step(
         action="fill",
         selector="[data-test='username']",
-        value="standard_user",
+        value=DEFAULT_USER,
         description="Fill in username",
     ),
     Step(
         action="fill",
         selector="[data-test='password']",
-        value="secret_sauce",
+        value=PASSWORD,
         description="Fill in password",
     ),
     Step(
@@ -74,8 +75,8 @@ def run():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto("https://www.saucedemo.com/")
-        page.fill("[data-test='username']", "standard_user")
-        page.fill("[data-test='password']", "secret_sauce")
+        page.fill("[data-test='username']", DEFAULT_USER)
+        page.fill("[data-test='password']", PASSWORD)
         page.click("[data-test='login-button']")
         page.click("[data-test='add-to-cart-sauce-labs-backpack']")
         page.click("[data-test='shopping-cart-link']")
@@ -130,8 +131,8 @@ def run():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto("https://www.saucedemo.com/")
-        page.fill("[data-test='username']", "standard_user")
-        page.fill("[data-test='password']", "secret_sauce")
+        page.fill("[data-test='username']", DEFAULT_USER)
+        page.fill("[data-test='password']", PASSWORD)
         page.click("[data-test='login-button']")
         page.click("[data-test='add-to-cart-sauce-labs-backpack']")
         page.click("[data-test='shopping-cart-link']")
@@ -195,6 +196,10 @@ state_healed = AgentState(
     flow=MOCK_FLOW,
     script=MOCK_REPAIRED_SCRIPT,
     result=MOCK_PASSED_RESULT,
+    # The original (failing) result, preserved separately from `result` — which is
+    # now the final PASS — so the gallery can still show the "before" screenshot
+    # and error alongside the healed "after" state.
+    original_result=MOCK_FAILED_RESULT,
     diagnosis=MOCK_DIAGNOSIS,
     repair_attempts=[
         RepairAttempt(
