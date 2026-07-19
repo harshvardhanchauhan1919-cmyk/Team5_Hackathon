@@ -5,14 +5,16 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { isBreakMode } from '../breakMode';
 import { Sidebar } from './Sidebar';
-import { Menu, ShoppingCart, AlertCircle, LogOut } from 'lucide-react';
+import { Menu, ShoppingCart, LogOut } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const { cart, currentPage, setPageView, user, isNavigating, logout } = useApp();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
+  const cartLinkSelector = isBreakMode('cart_selector') ? 'cart-link-v2' : 'shopping-cart-link';
 
   const handleCartClick = () => {
     setPageView('cart');
@@ -73,6 +75,7 @@ export const Header: React.FC = () => {
 
           <button
             id="shopping_cart_link"
+            data-test={cartLinkSelector}
             onClick={handleCartClick}
             className="relative p-2.5 rounded-xl hover:bg-slate-50 text-slate-600 hover:text-emerald-500 transition-all duration-150 focus:outline-none cursor-pointer"
             title="Shopping Cart"

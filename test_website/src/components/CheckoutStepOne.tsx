@@ -5,8 +5,11 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { isBreakMode } from '../breakMode';
 import { CheckoutInfo } from '../types';
 import { ArrowLeft, User, MapPin, ShieldAlert, BadgeInfo } from 'lucide-react';
+
+const CHECKOUT_DELAY_MS = 3000;
 
 export const CheckoutStepOne: React.FC = () => {
   const {
@@ -19,6 +22,7 @@ export const CheckoutStepOne: React.FC = () => {
   const isProblemUser = user === 'problem_user';
   const isVisualUser = user === 'visual_user';
   const isErrorUser = user === 'error_user';
+  const continueSelector = isBreakMode('continue_selector') ? 'continue-checkout' : 'continue';
 
   // Local state initialized with current context info
   const [firstName, setFirstName] = useState(checkoutInfo.firstName);
@@ -67,6 +71,11 @@ export const CheckoutStepOne: React.FC = () => {
       lastName: lastName.trim(),
       postalCode: postalCode.trim(),
     });
+
+    if (isBreakMode('checkout_delay')) {
+      window.setTimeout(() => setPageView('checkout-2'), CHECKOUT_DELAY_MS);
+      return;
+    }
 
     setPageView('checkout-2');
   };
@@ -204,6 +213,7 @@ export const CheckoutStepOne: React.FC = () => {
 
             <button
               id="continue"
+              data-test={continueSelector}
               type="submit"
               className="w-full sm:w-auto px-6 py-2.5 bg-gray-900 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs shadow-sm hover:shadow-md transition-all duration-150 cursor-pointer"
             >

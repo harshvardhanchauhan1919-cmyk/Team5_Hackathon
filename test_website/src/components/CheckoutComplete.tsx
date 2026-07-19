@@ -5,6 +5,7 @@
 
 import React, { useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { isBreakMode } from '../breakMode';
 import { ShoppingBag, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export const CheckoutComplete: React.FC = () => {
@@ -21,6 +22,7 @@ export const CheckoutComplete: React.FC = () => {
   };
 
   const isVisualUser = user === 'visual_user';
+  const completeHeaderSelector = isBreakMode('complete_selector') ? 'order-complete-title' : 'complete-header';
   const containerClass = isVisualUser
     ? 'flex items-start bg-pink-100 p-24 font-mono rotate-12 border-4 border-yellow-500'
     : 'max-w-xl mx-auto py-12 px-6 font-sans';
@@ -49,7 +51,7 @@ export const CheckoutComplete: React.FC = () => {
         </div>
 
         {/* Primary headers */}
-        <h3 className="complete-header text-sm font-bold text-gray-800 mt-2">
+        <h3 data-test={completeHeaderSelector} className="complete-header text-sm font-bold text-gray-800 mt-2">
           Thank you for your order!
         </h3>
 
